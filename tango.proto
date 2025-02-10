@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+option go_package = "grpc/tango";
+
+package tango;
+
+service TangoService {
+  // Submit a new job. The job will be split into multiple tasks.
+  rpc SubmitTask(TaskRequest) returns (TaskResponse) {}
+
+  rpc RegisterDevice(DeviceInfo) returns (DeviceResponse) {}
+
+  rpc UpdateDeviceStatus(DeviceStatus) returns (DeviceStatusResponse) {}
+
+  // Devices call FetchTask to pick up a split of a job.
+  rpc FetchTask(DeviceRequest) returns (TaskAssignment) {}
+
+  // Devices report back their computed weight updates.
+  rpc ReportResult(TaskResult) returns (ResultResponse) {}
+}
+
+message TaskRequest {
+  string job_id = 1;             // Unique ID for this job.
+  string computation_graph = 2;  // e.g. a StableHLO or JSON representation.
+  bytes data = 3;                // Any additional data.
+  int32 num_splits = 4;          // Number of splits (devices) expected for this job.
+}
+
+message TaskResponse {
+  bool accepted = 1;
+  string message = 2;
+}
+
+message DeviceInfo {
+  string device_id = 1;
+  float internet_speed = 2;
+  int32 available_ram = 3;
+  int32 cpu_usage = 4;
+  bool is_charging = 5;
+}
+
+message DeviceResponse {
+  bool registered = 1;
+  string message = 2;
+}
+
+message DeviceStatus {
+  string device_id = 1;
+  int32 tasks_in_last_hour = 2;
+  float cpu_usage = 3;
+  int32 available_ram = 4;
+  float internet_speed = 5;
+  bool is_charging = 6;
+}
+
+message DeviceStatusResponse {
+  bool updated = 1;
+  string message = 2;
+}
+
+message DeviceRequest {
+  string device_id = 1;
+}
+
+// The task assignment now includes the job id and a unique split task id.
+message TaskAssignment {
+  string job_id = 1;
+  string task_id = 2;
+  string computation_graph = 3;
+  bytes data = 4;
+}
+
+message TaskResult {
+  string device_id = 1;
+  string job_id = 2;
+  string task_id = 3;
+  // result_data is assumed to be a comma-separated string of float32 values (e.g., "1.0,2.0,3.0")
+  string result_data = 4;
+}
+
+message ResultResponse {
+  bool success = 1;
+  string message = 2;
+}

@@ -1,0 +1,279 @@
+// DO NOT EDIT (HENRY WILL BE MAD).
+// versions:
+// - protoc-gen-go-grpc v1.5.1
+// - protoc             v5.29.3
+// source: tango.proto
+
+package tango
+
+import (
+	context "context"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
+)
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+// Requires gRPC-Go v1.64.0 or later.
+const _ = grpc.SupportPackageIsVersion9
+
+const (
+	TangoService_SubmitTask_FullMethodName         = "/tango.TangoService/SubmitTask"
+	TangoService_RegisterDevice_FullMethodName     = "/tango.TangoService/RegisterDevice"
+	TangoService_UpdateDeviceStatus_FullMethodName = "/tango.TangoService/UpdateDeviceStatus"
+	TangoService_FetchTask_FullMethodName          = "/tango.TangoService/FetchTask"
+	TangoService_ReportResult_FullMethodName       = "/tango.TangoService/ReportResult"
+)
+
+// TangoServiceClient is the client API for TangoService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type TangoServiceClient interface {
+	// Submit a new job. The job will be split into multiple tasks.
+	SubmitTask(ctx context.Context, in *TaskRequest, opts ...grpc.CallOption) (*TaskResponse, error)
+	RegisterDevice(ctx context.Context, in *DeviceInfo, opts ...grpc.CallOption) (*DeviceResponse, error)
+	UpdateDeviceStatus(ctx context.Context, in *DeviceStatus, opts ...grpc.CallOption) (*DeviceStatusResponse, error)
+	// Devices call FetchTask to pick up a split of a job.
+	FetchTask(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*TaskAssignment, error)
+	// Devices report back their computed weight updates.
+	ReportResult(ctx context.Context, in *TaskResult, opts ...grpc.CallOption) (*ResultResponse, error)
+}
+
+type tangoServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewTangoServiceClient(cc grpc.ClientConnInterface) TangoServiceClient {
+	return &tangoServiceClient{cc}
+}
+
+func (c *tangoServiceClient) SubmitTask(ctx context.Context, in *TaskRequest, opts ...grpc.CallOption) (*TaskResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskResponse)
+	err := c.cc.Invoke(ctx, TangoService_SubmitTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tangoServiceClient) RegisterDevice(ctx context.Context, in *DeviceInfo, opts ...grpc.CallOption) (*DeviceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeviceResponse)
+	err := c.cc.Invoke(ctx, TangoService_RegisterDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tangoServiceClient) UpdateDeviceStatus(ctx context.Context, in *DeviceStatus, opts ...grpc.CallOption) (*DeviceStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeviceStatusResponse)
+	err := c.cc.Invoke(ctx, TangoService_UpdateDeviceStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tangoServiceClient) FetchTask(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*TaskAssignment, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskAssignment)
+	err := c.cc.Invoke(ctx, TangoService_FetchTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tangoServiceClient) ReportResult(ctx context.Context, in *TaskResult, opts ...grpc.CallOption) (*ResultResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResultResponse)
+	err := c.cc.Invoke(ctx, TangoService_ReportResult_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// TangoServiceServer is the server API for TangoService service.
+// All implementations must embed UnimplementedTangoServiceServer
+// for forward compatibility.
+type TangoServiceServer interface {
+	// Submit a new job. The job will be split into multiple tasks.
+	SubmitTask(context.Context, *TaskRequest) (*TaskResponse, error)
+	RegisterDevice(context.Context, *DeviceInfo) (*DeviceResponse, error)
+	UpdateDeviceStatus(context.Context, *DeviceStatus) (*DeviceStatusResponse, error)
+	// Devices call FetchTask to pick up a split of a job.
+	FetchTask(context.Context, *DeviceRequest) (*TaskAssignment, error)
+	// Devices report back their computed weight updates.
+	ReportResult(context.Context, *TaskResult) (*ResultResponse, error)
+	mustEmbedUnimplementedTangoServiceServer()
+}
+
+// UnimplementedTangoServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedTangoServiceServer struct{}
+
+func (UnimplementedTangoServiceServer) SubmitTask(context.Context, *TaskRequest) (*TaskResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTask not implemented")
+}
+func (UnimplementedTangoServiceServer) RegisterDevice(context.Context, *DeviceInfo) (*DeviceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterDevice not implemented")
+}
+func (UnimplementedTangoServiceServer) UpdateDeviceStatus(context.Context, *DeviceStatus) (*DeviceStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceStatus not implemented")
+}
+func (UnimplementedTangoServiceServer) FetchTask(context.Context, *DeviceRequest) (*TaskAssignment, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchTask not implemented")
+}
+func (UnimplementedTangoServiceServer) ReportResult(context.Context, *TaskResult) (*ResultResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportResult not implemented")
+}
+func (UnimplementedTangoServiceServer) mustEmbedUnimplementedTangoServiceServer() {}
+func (UnimplementedTangoServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeTangoServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TangoServiceServer will
+// result in compilation errors.
+type UnsafeTangoServiceServer interface {
+	mustEmbedUnimplementedTangoServiceServer()
+}
+
+func RegisterTangoServiceServer(s grpc.ServiceRegistrar, srv TangoServiceServer) {
+	// If the following call pancis, it indicates UnimplementedTangoServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&TangoService_ServiceDesc, srv)
+}
+
+func _TangoService_SubmitTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TangoServiceServer).SubmitTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TangoService_SubmitTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TangoServiceServer).SubmitTask(ctx, req.(*TaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TangoService_RegisterDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TangoServiceServer).RegisterDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TangoService_RegisterDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TangoServiceServer).RegisterDevice(ctx, req.(*DeviceInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TangoService_UpdateDeviceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceStatus)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TangoServiceServer).UpdateDeviceStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TangoService_UpdateDeviceStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TangoServiceServer).UpdateDeviceStatus(ctx, req.(*DeviceStatus))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TangoService_FetchTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TangoServiceServer).FetchTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TangoService_FetchTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TangoServiceServer).FetchTask(ctx, req.(*DeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TangoService_ReportResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskResult)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TangoServiceServer).ReportResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TangoService_ReportResult_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TangoServiceServer).ReportResult(ctx, req.(*TaskResult))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// TangoService_ServiceDesc is the grpc.ServiceDesc for TangoService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var TangoService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "tango.TangoService",
+	HandlerType: (*TangoServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SubmitTask",
+			Handler:    _TangoService_SubmitTask_Handler,
+		},
+		{
+			MethodName: "RegisterDevice",
+			Handler:    _TangoService_RegisterDevice_Handler,
+		},
+		{
+			MethodName: "UpdateDeviceStatus",
+			Handler:    _TangoService_UpdateDeviceStatus_Handler,
+		},
+		{
+			MethodName: "FetchTask",
+			Handler:    _TangoService_FetchTask_Handler,
+		},
+		{
+			MethodName: "ReportResult",
+			Handler:    _TangoService_ReportResult_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "tango.proto",
+}
