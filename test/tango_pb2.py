@@ -24,14 +24,14 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0btango.proto\x12\x05tango\"Z\n\x0bTaskRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x19\n\x11\x63omputation_graph\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x12\n\nnum_splits\x18\x04 \x01(\x05\"1\n\x0cTaskResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"v\n\nDeviceInfo\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x16\n\x0einternet_speed\x18\x02 \x01(\x02\x12\x15\n\ravailable_ram\x18\x03 \x01(\x05\x12\x11\n\tcpu_usage\x18\x04 \x01(\x05\x12\x13\n\x0bis_charging\x18\x05 \x01(\x08\"5\n\x0e\x44\x65viceResponse\x12\x12\n\nregistered\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x94\x01\n\x0c\x44\x65viceStatus\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x1a\n\x12tasks_in_last_hour\x18\x02 \x01(\x05\x12\x11\n\tcpu_usage\x18\x03 \x01(\x02\x12\x15\n\ravailable_ram\x18\x04 \x01(\x05\x12\x16\n\x0einternet_speed\x18\x05 \x01(\x02\x12\x13\n\x0bis_charging\x18\x06 \x01(\x08\"8\n\x14\x44\x65viceStatusResponse\x12\x0f\n\x07updated\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\"\n\rDeviceRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"Z\n\x0eTaskAssignment\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x0f\n\x07task_id\x18\x02 \x01(\t\x12\x19\n\x11\x63omputation_graph\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"U\n\nTaskResult\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07task_id\x18\x03 \x01(\t\x12\x13\n\x0bresult_data\x18\x04 \x01(\t\"2\n\x0eResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2\xc7\x02\n\x0cTangoService\x12\x37\n\nSubmitTask\x12\x12.tango.TaskRequest\x1a\x13.tango.TaskResponse\"\x00\x12<\n\x0eRegisterDevice\x12\x11.tango.DeviceInfo\x1a\x15.tango.DeviceResponse\"\x00\x12H\n\x12UpdateDeviceStatus\x12\x13.tango.DeviceStatus\x1a\x1b.tango.DeviceStatusResponse\"\x00\x12:\n\tFetchTask\x12\x14.tango.DeviceRequest\x1a\x15.tango.TaskAssignment\"\x00\x12:\n\x0cReportResult\x12\x11.tango.TaskResult\x1a\x15.tango.ResultResponse\"\x00\x42\x0cZ\ngrpc/tangob\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0btango.proto\x12\x05tango\"Z\n\x0bTaskRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x19\n\x11\x63omputation_graph\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x03 \x01(\x0c\x12\x12\n\nnum_splits\x18\x04 \x01(\x05\"1\n\x0cTaskResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"v\n\nDeviceInfo\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x16\n\x0einternet_speed\x18\x02 \x01(\x02\x12\x15\n\ravailable_ram\x18\x03 \x01(\x05\x12\x11\n\tcpu_usage\x18\x04 \x01(\x05\x12\x13\n\x0bis_charging\x18\x05 \x01(\x08\"5\n\x0e\x44\x65viceResponse\x12\x12\n\nregistered\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x94\x01\n\x0c\x44\x65viceStatus\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x1a\n\x12tasks_in_last_hour\x18\x02 \x01(\x05\x12\x11\n\tcpu_usage\x18\x03 \x01(\x02\x12\x15\n\ravailable_ram\x18\x04 \x01(\x05\x12\x16\n\x0einternet_speed\x18\x05 \x01(\x02\x12\x13\n\x0bis_charging\x18\x06 \x01(\x08\"8\n\x14\x44\x65viceStatusResponse\x12\x0f\n\x07updated\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\"\n\rDeviceRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"Z\n\x0eTaskAssignment\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x0f\n\x07task_id\x18\x02 \x01(\t\x12\x19\n\x11\x63omputation_graph\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x04 \x01(\x0c\"U\n\nTaskResult\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07task_id\x18\x03 \x01(\t\x12\x13\n\x0bresult_data\x18\x04 \x01(\t\"2\n\x0eResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\"\n\x10JobStatusRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"M\n\x0eJobStatusReply\x12\x13\n\x0bis_complete\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x15\n\rfinal_weights\x18\x03 \x03(\x02\x32\x89\x03\n\x0cTangoService\x12\x37\n\nSubmitTask\x12\x12.tango.TaskRequest\x1a\x13.tango.TaskResponse\"\x00\x12<\n\x0eRegisterDevice\x12\x11.tango.DeviceInfo\x1a\x15.tango.DeviceResponse\"\x00\x12H\n\x12UpdateDeviceStatus\x12\x13.tango.DeviceStatus\x1a\x1b.tango.DeviceStatusResponse\"\x00\x12:\n\tFetchTask\x12\x14.tango.DeviceRequest\x1a\x15.tango.TaskAssignment\"\x00\x12:\n\x0cReportResult\x12\x11.tango.TaskResult\x1a\x15.tango.ResultResponse\"\x00\x12@\n\x0cGetJobStatus\x12\x17.tango.JobStatusRequest\x1a\x15.tango.JobStatusReply\"\x00\x42#Z!cactus/tango/grpc_proto/go; tangob\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'tango_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'Z\ngrpc/tango'
+  _globals['DESCRIPTOR']._serialized_options = b'Z!cactus/tango/grpc_proto/go; tango'
   _globals['_TASKREQUEST']._serialized_start=22
   _globals['_TASKREQUEST']._serialized_end=112
   _globals['_TASKRESPONSE']._serialized_start=114
@@ -52,6 +52,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_TASKRESULT']._serialized_end=762
   _globals['_RESULTRESPONSE']._serialized_start=764
   _globals['_RESULTRESPONSE']._serialized_end=814
-  _globals['_TANGOSERVICE']._serialized_start=817
-  _globals['_TANGOSERVICE']._serialized_end=1144
+  _globals['_JOBSTATUSREQUEST']._serialized_start=816
+  _globals['_JOBSTATUSREQUEST']._serialized_end=850
+  _globals['_JOBSTATUSREPLY']._serialized_start=852
+  _globals['_JOBSTATUSREPLY']._serialized_end=929
+  _globals['_TANGOSERVICE']._serialized_start=932
+  _globals['_TANGOSERVICE']._serialized_end=1325
 # @@protoc_insertion_point(module_scope)

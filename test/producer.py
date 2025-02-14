@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import grpc
 import tango_pb2
-import tango_pb2_grpc as tango_pb2_grpc
+import tango_pb2_grpc
 
 def run():
     # Connect to the gRPC server.

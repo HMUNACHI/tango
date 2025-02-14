@@ -59,6 +59,11 @@ class TangoServiceStub(object):
                 request_serializer=tango__pb2.TaskResult.SerializeToString,
                 response_deserializer=tango__pb2.ResultResponse.FromString,
                 _registered_method=True)
+        self.GetJobStatus = channel.unary_unary(
+                '/tango.TangoService/GetJobStatus',
+                request_serializer=tango__pb2.JobStatusRequest.SerializeToString,
+                response_deserializer=tango__pb2.JobStatusReply.FromString,
+                _registered_method=True)
 
 
 class TangoServiceServicer(object):
@@ -97,6 +102,12 @@ class TangoServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetJobStatus(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_TangoServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -124,6 +135,11 @@ def add_TangoServiceServicer_to_server(servicer, server):
                     servicer.ReportResult,
                     request_deserializer=tango__pb2.TaskResult.FromString,
                     response_serializer=tango__pb2.ResultResponse.SerializeToString,
+            ),
+            'GetJobStatus': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetJobStatus,
+                    request_deserializer=tango__pb2.JobStatusRequest.FromString,
+                    response_serializer=tango__pb2.JobStatusReply.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -261,6 +277,33 @@ class TangoService(object):
             '/tango.TangoService/ReportResult',
             tango__pb2.TaskResult.SerializeToString,
             tango__pb2.ResultResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetJobStatus(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/tango.TangoService/GetJobStatus',
+            tango__pb2.JobStatusRequest.SerializeToString,
+            tango__pb2.JobStatusReply.FromString,
             options,
             channel_credentials,
             insecure,

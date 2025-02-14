@@ -1,29 +1,28 @@
 syntax = "proto3";
 
-option go_package = "grpc/tango";
+option go_package = "cactus/tango/grpc_proto/go; tango";
 
 package tango;
 
 service TangoService {
-  // Submit a new job. The job will be split into multiple tasks.
   rpc SubmitTask(TaskRequest) returns (TaskResponse) {}
 
   rpc RegisterDevice(DeviceInfo) returns (DeviceResponse) {}
 
   rpc UpdateDeviceStatus(DeviceStatus) returns (DeviceStatusResponse) {}
 
-  // Devices call FetchTask to pick up a split of a job.
   rpc FetchTask(DeviceRequest) returns (TaskAssignment) {}
 
-  // Devices report back their computed weight updates.
   rpc ReportResult(TaskResult) returns (ResultResponse) {}
+
+  rpc GetJobStatus(JobStatusRequest) returns (JobStatusReply) {}
 }
 
 message TaskRequest {
-  string job_id = 1;             // Unique ID for this job.
-  string computation_graph = 2;  // e.g. a StableHLO or JSON representation.
-  bytes data = 3;                // Any additional data.
-  int32 num_splits = 4;          // Number of splits (devices) expected for this job.
+  string job_id = 1;            
+  string computation_graph = 2;  
+  bytes data = 3; 
+  int32 num_splits = 4; 
 }
 
 message TaskResponse {
@@ -62,7 +61,6 @@ message DeviceRequest {
   string device_id = 1;
 }
 
-// The task assignment now includes the job id and a unique split task id.
 message TaskAssignment {
   string job_id = 1;
   string task_id = 2;
@@ -81,4 +79,14 @@ message TaskResult {
 message ResultResponse {
   bool success = 1;
   string message = 2;
+}
+
+message JobStatusRequest {
+  string job_id = 1;
+}
+
+message JobStatusReply {
+  bool is_complete = 1;
+  string message = 2;
+  repeated float final_weights = 3;
 }

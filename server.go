@@ -12,34 +12,26 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	// Updated import to match module path.
-	tango "github.com/henry/tango/grpc/tango"
+	tango "cactus/tango/grpc_proto/go"
 )
 
-// Job represents a submitted job that will be split into multiple tasks.
 type Job struct {
 	JobID            string
 	ComputationGraph string
 	Data             []byte
-	ExpectedSplits   int // number of splits/devices expected
-	AssignedSplits   int // number of splits already assigned
-	ReceivedUpdates  int // number of weight updates received
-	// SumWeights will accumulate weight updates element-wise.
-	SumWeights []float32
-	// WeightLength is set on the first received update.
-	WeightLength int
+	ExpectedSplits   int
+	AssignedSplits   int
+	ReceivedUpdates  int
+	SumWeights       []float32
+	WeightLength     int
 }
 
-// server implements the TangoServiceServer interface.
 type server struct {
 	tango.UnimplementedTangoServiceServer
-
 	mu                sync.Mutex
 	registeredDevices map[string]*tango.DeviceInfo
-	// jobs holds the active jobs keyed by job_id.
-	jobs map[string]*Job
-	// jobQueue maintains the order of job submission (list of job_ids).
-	jobQueue []string
+	jobs              map[string]*Job
+	jobQueue          []string
 }
 
 func newServer() *server {
@@ -50,13 +42,12 @@ func newServer() *server {
 	}
 }
 
-// SubmitTask creates a new job and enqueues it.
 func (s *server) SubmitTask(ctx context.Context, req *tango.TaskRequest) (*tango.TaskResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	log.Printf("Received new job submission: %s expecting %d splits", req.JobId, req.NumSplits)
-	// Create and store a new job.
+
 	job := &Job{
 		JobID:            req.JobId,
 		ComputationGraph: req.ComputationGraph,
@@ -74,12 +65,12 @@ func (s *server) SubmitTask(ctx context.Context, req *tango.TaskRequest) (*tango
 	}, nil
 }
 
-// RegisterDevice registers a new device as a compute provider.
 func (s *server) RegisterDevice(ctx context.Context, info *tango.DeviceInfo) (*tango.DeviceResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	log.Printf("Registering device %s", info.DeviceId)
+
 	s.registeredDevices[info.DeviceId] = info
 	return &tango.DeviceResponse{
 		Registered: true,
@@ -87,7 +78,6 @@ func (s *server) RegisterDevice(ctx context.Context, info *tango.DeviceInfo) (*t
 	}, nil
 }
 
-// UpdateDeviceStatus updates a device's status.
 func (s *server) UpdateDeviceStatus(ctx context.Context, status *tango.DeviceStatus) (*tango.DeviceStatusResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -109,24 +99,25 @@ func (s *server) UpdateDeviceStatus(ctx context.Context, status *tango.DeviceSta
 	}, nil
 }
 
-// FetchTask assigns a split of a job to a device.
 func (s *server) FetchTask(ctx context.Context, req *tango.DeviceRequest) (*tango.TaskAssignment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	log.Printf("Device %s requesting a task", req.DeviceId)
-	// Iterate over the jobQueue in FIFO order.
+	// To-Do: This iterate over the jobQueue in FIFO order, has to use device priority
 	for _, jobID := range s.jobQueue {
 		job, exists := s.jobs[jobID]
 		if !exists {
 			continue
 		}
-		// If this job still has splits remaining, assign one.
+
 		if job.AssignedSplits < job.ExpectedSplits {
 			job.AssignedSplits++
-			// Create a unique task ID based on job ID and the split number.
+
 			taskID := fmt.Sprintf("%s_%d", job.JobID, job.AssignedSplits)
+
 			log.Printf("Assigning task %s (split %d of job %s) to device %s",
+
 				taskID, job.AssignedSplits, job.JobID, req.DeviceId)
 			assignment := &tango.TaskAssignment{
 				JobId:            job.JobID,
@@ -140,7 +131,6 @@ func (s *server) FetchTask(ctx context.Context, req *tango.DeviceRequest) (*tang
 	return nil, fmt.Errorf("no available tasks at this time")
 }
 
-// ReportResult receives a weight update from a device and aggregates it.
 func (s *server) ReportResult(ctx context.Context, res *tango.TaskResult) (*tango.ResultResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -156,7 +146,6 @@ func (s *server) ReportResult(ctx context.Context, res *tango.TaskResult) (*tang
 		}, nil
 	}
 
-	// Parse the weight update.
 	update, err := parseWeights(res.ResultData)
 	if err != nil {
 		return &tango.ResultResponse{
@@ -165,7 +154,6 @@ func (s *server) ReportResult(ctx context.Context, res *tango.TaskResult) (*tang
 		}, nil
 	}
 
-	// Initialize SumWeights on first update.
 	if job.SumWeights == nil {
 		job.SumWeights = make([]float32, len(update))
 		job.WeightLength = len(update)
@@ -184,14 +172,13 @@ func (s *server) ReportResult(ctx context.Context, res *tango.TaskResult) (*tang
 	}
 
 	job.ReceivedUpdates++
-	// If we have received all splits, perform final aggregation.
+
 	if job.ReceivedUpdates == job.ExpectedSplits {
 		aggregated := make([]float32, job.WeightLength)
 		for i, sum := range job.SumWeights {
 			aggregated[i] = sum / float32(job.ExpectedSplits)
 		}
 		log.Printf("Job %s complete. Aggregated weights: %v", job.JobID, aggregated)
-		// Optionally remove the job from the queue.
 		delete(s.jobs, job.JobID)
 		s.removeJobFromQueue(job.JobID)
 	}
@@ -202,7 +189,6 @@ func (s *server) ReportResult(ctx context.Context, res *tango.TaskResult) (*tang
 	}, nil
 }
 
-// removeJobFromQueue removes a completed job from the jobQueue.
 func (s *server) removeJobFromQueue(jobID string) {
 	index := -1
 	for i, id := range s.jobQueue {
@@ -216,8 +202,6 @@ func (s *server) removeJobFromQueue(jobID string) {
 	}
 }
 
-// parseWeights converts a comma-separated string of floats to a slice of float32.
-// Example input: "1.0,2.0,3.0"
 func parseWeights(data string) ([]float32, error) {
 	parts := strings.Split(data, ",")
 	weights := make([]float32, 0, len(parts))
@@ -233,6 +217,30 @@ func parseWeights(data string) ([]float32, error) {
 		weights = append(weights, float32(val))
 	}
 	return weights, nil
+}
+
+func (s *server) GetJobStatus(ctx context.Context, req *tango.JobStatusRequest) (*tango.JobStatusReply, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	job, exists := s.jobs[req.JobId]
+	if !exists {
+		return &tango.JobStatusReply{
+			IsComplete: true,
+			Message:    "Job not found (possible completion).",
+		}, nil
+	}
+	if job.ReceivedUpdates >= job.ExpectedSplits {
+		return &tango.JobStatusReply{
+			IsComplete:   true,
+			Message:      "Job is complete.",
+			FinalWeights: job.SumWeights,
+		}, nil
+	}
+	return &tango.JobStatusReply{
+		IsComplete: false,
+		Message:    "Job is still in progress.",
+	}, nil
 }
 
 func main() {
