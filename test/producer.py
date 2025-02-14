@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import grpc
-import tango_pb2
-import tango_pb2_grpc
+import protobuff_pb2 as pb
+import protobuff_pb2_grpc as pb_grpc
 
 def run():
     # Connect to the gRPC server.
     channel = grpc.insecure_channel('localhost:50051')
-    stub = tango_pb2_grpc.TangoServiceStub(channel)
+    stub = pb_grpc.TangoServiceStub(channel)
     
     # Register this device as a compute provider.
     device_id = "device1"
-    device_info = tango_pb2.DeviceInfo(
+    device_info = pb.DeviceInfo(
         device_id=device_id,
         internet_speed=50.0,  # in Mbps
         available_ram=4096,   # in MB
@@ -21,7 +21,7 @@ def run():
     print("RegisterDevice response:", reg_response.message)
     
     # Optionally update device status.
-    device_status = tango_pb2.DeviceStatus(
+    device_status = pb.DeviceStatus(
         device_id=device_id,
         tasks_in_last_hour=0,
         cpu_usage=10.0,
@@ -33,7 +33,7 @@ def run():
     print("UpdateDeviceStatus response:", status_response.message)
     
     # Fetch a task from the server.
-    device_request = tango_pb2.DeviceRequest(device_id=device_id)
+    device_request = pb.DeviceRequest(device_id=device_id)
     
     print("Fetching task...")
     try:
@@ -48,7 +48,7 @@ def run():
         # For demonstration purposes, we use a dummy weight update "1.0,2.0,3.0".
         result_data = "1.0,2.0,3.0"
         
-        task_result = tango_pb2.TaskResult(
+        task_result = pb.TaskResult(
             device_id=device_id,
             job_id=task_assignment.job_id,
             task_id=task_assignment.task_id,

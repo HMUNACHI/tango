@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "cactus/tango/grpc_proto/go; tango";
+option go_package = "cactus/tango/src; protobuff";
 
-package tango;
+package protobuff;
 
 service TangoService {
   rpc SubmitTask(TaskRequest) returns (TaskResponse) {}

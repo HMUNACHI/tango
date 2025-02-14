@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: tango.proto
+// source: protobuff.proto
 
-package tango
+package protobuff
 
 import (
 	context "context"
@@ -19,25 +19,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TangoService_SubmitTask_FullMethodName         = "/tango.TangoService/SubmitTask"
-	TangoService_RegisterDevice_FullMethodName     = "/tango.TangoService/RegisterDevice"
-	TangoService_UpdateDeviceStatus_FullMethodName = "/tango.TangoService/UpdateDeviceStatus"
-	TangoService_FetchTask_FullMethodName          = "/tango.TangoService/FetchTask"
-	TangoService_ReportResult_FullMethodName       = "/tango.TangoService/ReportResult"
-	TangoService_GetJobStatus_FullMethodName       = "/tango.TangoService/GetJobStatus"
+	TangoService_SubmitTask_FullMethodName         = "/protobuff.TangoService/SubmitTask"
+	TangoService_RegisterDevice_FullMethodName     = "/protobuff.TangoService/RegisterDevice"
+	TangoService_UpdateDeviceStatus_FullMethodName = "/protobuff.TangoService/UpdateDeviceStatus"
+	TangoService_FetchTask_FullMethodName          = "/protobuff.TangoService/FetchTask"
+	TangoService_ReportResult_FullMethodName       = "/protobuff.TangoService/ReportResult"
+	TangoService_GetJobStatus_FullMethodName       = "/protobuff.TangoService/GetJobStatus"
 )
 
 // TangoServiceClient is the client API for TangoService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TangoServiceClient interface {
-	// Submit a new job. The job will be split into multiple tasks.
 	SubmitTask(ctx context.Context, in *TaskRequest, opts ...grpc.CallOption) (*TaskResponse, error)
 	RegisterDevice(ctx context.Context, in *DeviceInfo, opts ...grpc.CallOption) (*DeviceResponse, error)
 	UpdateDeviceStatus(ctx context.Context, in *DeviceStatus, opts ...grpc.CallOption) (*DeviceStatusResponse, error)
-	// Devices call FetchTask to pick up a split of a job.
 	FetchTask(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*TaskAssignment, error)
-	// Devices report back their computed weight updates.
 	ReportResult(ctx context.Context, in *TaskResult, opts ...grpc.CallOption) (*ResultResponse, error)
 	GetJobStatus(ctx context.Context, in *JobStatusRequest, opts ...grpc.CallOption) (*JobStatusReply, error)
 }
@@ -114,13 +111,10 @@ func (c *tangoServiceClient) GetJobStatus(ctx context.Context, in *JobStatusRequ
 // All implementations must embed UnimplementedTangoServiceServer
 // for forward compatibility.
 type TangoServiceServer interface {
-	// Submit a new job. The job will be split into multiple tasks.
 	SubmitTask(context.Context, *TaskRequest) (*TaskResponse, error)
 	RegisterDevice(context.Context, *DeviceInfo) (*DeviceResponse, error)
 	UpdateDeviceStatus(context.Context, *DeviceStatus) (*DeviceStatusResponse, error)
-	// Devices call FetchTask to pick up a split of a job.
 	FetchTask(context.Context, *DeviceRequest) (*TaskAssignment, error)
-	// Devices report back their computed weight updates.
 	ReportResult(context.Context, *TaskResult) (*ResultResponse, error)
 	GetJobStatus(context.Context, *JobStatusRequest) (*JobStatusReply, error)
 	mustEmbedUnimplementedTangoServiceServer()
@@ -284,7 +278,7 @@ func _TangoService_GetJobStatus_Handler(srv interface{}, ctx context.Context, de
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TangoService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "tango.TangoService",
+	ServiceName: "protobuff.TangoService",
 	HandlerType: (*TangoServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -313,5 +307,5 @@ var TangoService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "tango.proto",
+	Metadata: "protobuff.proto",
 }

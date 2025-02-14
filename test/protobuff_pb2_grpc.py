@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import tango_pb2 as tango__pb2
+import protobuff_pb2 as protobuff__pb2
 
 GRPC_GENERATED_VERSION = '1.70.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in tango_pb2_grpc.py depends on'
+        + f' but the generated code in protobuff_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -35,34 +35,34 @@ class TangoServiceStub(object):
             channel: A grpc.Channel.
         """
         self.SubmitTask = channel.unary_unary(
-                '/tango.TangoService/SubmitTask',
-                request_serializer=tango__pb2.TaskRequest.SerializeToString,
-                response_deserializer=tango__pb2.TaskResponse.FromString,
+                '/protobuff.TangoService/SubmitTask',
+                request_serializer=protobuff__pb2.TaskRequest.SerializeToString,
+                response_deserializer=protobuff__pb2.TaskResponse.FromString,
                 _registered_method=True)
         self.RegisterDevice = channel.unary_unary(
-                '/tango.TangoService/RegisterDevice',
-                request_serializer=tango__pb2.DeviceInfo.SerializeToString,
-                response_deserializer=tango__pb2.DeviceResponse.FromString,
+                '/protobuff.TangoService/RegisterDevice',
+                request_serializer=protobuff__pb2.DeviceInfo.SerializeToString,
+                response_deserializer=protobuff__pb2.DeviceResponse.FromString,
                 _registered_method=True)
         self.UpdateDeviceStatus = channel.unary_unary(
-                '/tango.TangoService/UpdateDeviceStatus',
-                request_serializer=tango__pb2.DeviceStatus.SerializeToString,
-                response_deserializer=tango__pb2.DeviceStatusResponse.FromString,
+                '/protobuff.TangoService/UpdateDeviceStatus',
+                request_serializer=protobuff__pb2.DeviceStatus.SerializeToString,
+                response_deserializer=protobuff__pb2.DeviceStatusResponse.FromString,
                 _registered_method=True)
         self.FetchTask = channel.unary_unary(
-                '/tango.TangoService/FetchTask',
-                request_serializer=tango__pb2.DeviceRequest.SerializeToString,
-                response_deserializer=tango__pb2.TaskAssignment.FromString,
+                '/protobuff.TangoService/FetchTask',
+                request_serializer=protobuff__pb2.DeviceRequest.SerializeToString,
+                response_deserializer=protobuff__pb2.TaskAssignment.FromString,
                 _registered_method=True)
         self.ReportResult = channel.unary_unary(
-                '/tango.TangoService/ReportResult',
-                request_serializer=tango__pb2.TaskResult.SerializeToString,
-                response_deserializer=tango__pb2.ResultResponse.FromString,
+                '/protobuff.TangoService/ReportResult',
+                request_serializer=protobuff__pb2.TaskResult.SerializeToString,
+                response_deserializer=protobuff__pb2.ResultResponse.FromString,
                 _registered_method=True)
         self.GetJobStatus = channel.unary_unary(
-                '/tango.TangoService/GetJobStatus',
-                request_serializer=tango__pb2.JobStatusRequest.SerializeToString,
-                response_deserializer=tango__pb2.JobStatusReply.FromString,
+                '/protobuff.TangoService/GetJobStatus',
+                request_serializer=protobuff__pb2.JobStatusRequest.SerializeToString,
+                response_deserializer=protobuff__pb2.JobStatusReply.FromString,
                 _registered_method=True)
 
 
@@ -70,8 +70,7 @@ class TangoServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def SubmitTask(self, request, context):
-        """Submit a new job. The job will be split into multiple tasks.
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -89,15 +88,13 @@ class TangoServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def FetchTask(self, request, context):
-        """Devices call FetchTask to pick up a split of a job.
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def ReportResult(self, request, context):
-        """Devices report back their computed weight updates.
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -113,39 +110,39 @@ def add_TangoServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'SubmitTask': grpc.unary_unary_rpc_method_handler(
                     servicer.SubmitTask,
-                    request_deserializer=tango__pb2.TaskRequest.FromString,
-                    response_serializer=tango__pb2.TaskResponse.SerializeToString,
+                    request_deserializer=protobuff__pb2.TaskRequest.FromString,
+                    response_serializer=protobuff__pb2.TaskResponse.SerializeToString,
             ),
             'RegisterDevice': grpc.unary_unary_rpc_method_handler(
                     servicer.RegisterDevice,
-                    request_deserializer=tango__pb2.DeviceInfo.FromString,
-                    response_serializer=tango__pb2.DeviceResponse.SerializeToString,
+                    request_deserializer=protobuff__pb2.DeviceInfo.FromString,
+                    response_serializer=protobuff__pb2.DeviceResponse.SerializeToString,
             ),
             'UpdateDeviceStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.UpdateDeviceStatus,
-                    request_deserializer=tango__pb2.DeviceStatus.FromString,
-                    response_serializer=tango__pb2.DeviceStatusResponse.SerializeToString,
+                    request_deserializer=protobuff__pb2.DeviceStatus.FromString,
+                    response_serializer=protobuff__pb2.DeviceStatusResponse.SerializeToString,
             ),
             'FetchTask': grpc.unary_unary_rpc_method_handler(
                     servicer.FetchTask,
-                    request_deserializer=tango__pb2.DeviceRequest.FromString,
-                    response_serializer=tango__pb2.TaskAssignment.SerializeToString,
+                    request_deserializer=protobuff__pb2.DeviceRequest.FromString,
+                    response_serializer=protobuff__pb2.TaskAssignment.SerializeToString,
             ),
             'ReportResult': grpc.unary_unary_rpc_method_handler(
                     servicer.ReportResult,
-                    request_deserializer=tango__pb2.TaskResult.FromString,
-                    response_serializer=tango__pb2.ResultResponse.SerializeToString,
+                    request_deserializer=protobuff__pb2.TaskResult.FromString,
+                    response_serializer=protobuff__pb2.ResultResponse.SerializeToString,
             ),
             'GetJobStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.GetJobStatus,
-                    request_deserializer=tango__pb2.JobStatusRequest.FromString,
-                    response_serializer=tango__pb2.JobStatusReply.SerializeToString,
+                    request_deserializer=protobuff__pb2.JobStatusRequest.FromString,
+                    response_serializer=protobuff__pb2.JobStatusReply.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'tango.TangoService', rpc_method_handlers)
+            'protobuff.TangoService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('tango.TangoService', rpc_method_handlers)
+    server.add_registered_method_handlers('protobuff.TangoService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -166,9 +163,9 @@ class TangoService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/tango.TangoService/SubmitTask',
-            tango__pb2.TaskRequest.SerializeToString,
-            tango__pb2.TaskResponse.FromString,
+            '/protobuff.TangoService/SubmitTask',
+            protobuff__pb2.TaskRequest.SerializeToString,
+            protobuff__pb2.TaskResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -193,9 +190,9 @@ class TangoService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/tango.TangoService/RegisterDevice',
-            tango__pb2.DeviceInfo.SerializeToString,
-            tango__pb2.DeviceResponse.FromString,
+            '/protobuff.TangoService/RegisterDevice',
+            protobuff__pb2.DeviceInfo.SerializeToString,
+            protobuff__pb2.DeviceResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -220,9 +217,9 @@ class TangoService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/tango.TangoService/UpdateDeviceStatus',
-            tango__pb2.DeviceStatus.SerializeToString,
-            tango__pb2.DeviceStatusResponse.FromString,
+            '/protobuff.TangoService/UpdateDeviceStatus',
+            protobuff__pb2.DeviceStatus.SerializeToString,
+            protobuff__pb2.DeviceStatusResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -247,9 +244,9 @@ class TangoService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/tango.TangoService/FetchTask',
-            tango__pb2.DeviceRequest.SerializeToString,
-            tango__pb2.TaskAssignment.FromString,
+            '/protobuff.TangoService/FetchTask',
+            protobuff__pb2.DeviceRequest.SerializeToString,
+            protobuff__pb2.TaskAssignment.FromString,
             options,
             channel_credentials,
             insecure,
@@ -274,9 +271,9 @@ class TangoService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/tango.TangoService/ReportResult',
-            tango__pb2.TaskResult.SerializeToString,
-            tango__pb2.ResultResponse.FromString,
+            '/protobuff.TangoService/ReportResult',
+            protobuff__pb2.TaskResult.SerializeToString,
+            protobuff__pb2.ResultResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -301,9 +298,9 @@ class TangoService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/tango.TangoService/GetJobStatus',
-            tango__pb2.JobStatusRequest.SerializeToString,
-            tango__pb2.JobStatusReply.FromString,
+            '/protobuff.TangoService/GetJobStatus',
+            protobuff__pb2.JobStatusRequest.SerializeToString,
+            protobuff__pb2.JobStatusReply.FromString,
             options,
             channel_credentials,
             insecure,

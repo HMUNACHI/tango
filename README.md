@@ -11,7 +11,7 @@
 ## Running the Server
 1. From within the tango folder, run:
    ```
-   go run server.go
+   go run main.go
    ```
 
 ## Python Consumer and Producer
