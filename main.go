@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	// Changed dot-import to explicit alias for clarity.
 	tango "cactus/tango/src"
 	pb "cactus/tango/src/protobuff"
 )
@@ -20,7 +19,6 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	// Updated to use the 'tango' alias.
 	tangoServer := tango.NewServer()
 	pb.RegisterTangoServiceServer(grpcServer, tangoServer)
 
