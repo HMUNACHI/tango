@@ -6,23 +6,19 @@ package protobuff;
 
 service TangoService {
   rpc SubmitTask(TaskRequest) returns (TaskResponse) {}
-
   rpc RegisterDevice(DeviceInfo) returns (DeviceResponse) {}
-
   rpc UpdateDeviceStatus(DeviceStatus) returns (DeviceStatusResponse) {}
-
   rpc FetchTask(DeviceRequest) returns (TaskAssignment) {}
-
   rpc ReportResult(TaskResult) returns (ResultResponse) {}
-
   rpc GetJobStatus(JobStatusRequest) returns (JobStatusReply) {}
 }
 
 message TaskRequest {
-  string job_id = 1;            
-  string computation_graph = 2;  
-  bytes data = 3; 
-  int32 num_splits = 4; 
+  string job_id = 1;
+  string operation = 2;   // Specifies the operation (e.g., "matmul", "add", "divide", "hadamard", "cos", "sin")
+  bytes a_data = 3;       // Contains the binary fp16 data for A shards
+  bytes b_data = 4;       // Contains the binary fp16 data for B shards (if applicable)
+  int32 num_splits = 5;
 }
 
 message TaskResponse {
@@ -64,16 +60,16 @@ message DeviceRequest {
 message TaskAssignment {
   string job_id = 1;
   string task_id = 2;
-  string computation_graph = 3;
-  bytes data = 4;
+  string operation = 3;   // Informs the worker which operation to perform
+  bytes a_data = 4;       // Operand A shards
+  bytes b_data = 5;       // Operand B shards
 }
 
 message TaskResult {
   string device_id = 1;
   string job_id = 2;
   string task_id = 3;
-  // result_data is assumed to be a comma-separated string of float32 values (e.g., "1.0,2.0,3.0")
-  string result_data = 4;
+  bytes result_data = 4;  // Contains the binary result (e.g., a C_shard)
 }
 
 message ResultResponse {
@@ -88,5 +84,5 @@ message JobStatusRequest {
 message JobStatusReply {
   bool is_complete = 1;
   string message = 2;
-  repeated float final_weights = 3;
+  bytes final_result = 3; // Final aggregated result (e.g., reassembled C_shards)
 }

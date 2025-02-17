@@ -23,3 +23,6 @@
    ```
    python3 test/producer.py
    ```
+
+## Key concepts 
+1. 
