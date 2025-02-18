@@ -95,20 +95,27 @@ def test_torch_matmul_cactus():
     C = torch_matmul_cactus(A, B)
     expected_result = torch.matmul(A, B)
     assert torch.allclose(C, expected_result, atol=1e-2)
-    
 
-def run():
-    A = torch.randn(8, 8, dtype=torch.float16)
-    B = torch.randn(8, 8, dtype=torch.float16)
+def test_cactus_linear_torch():
+    X = torch.randn(8, 8, dtype=torch.float16)
+    Y = X * 2
 
     model = CactusLinearTorch(8, 8)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
-    C = model(A)
-    loss = C.sum()
-    loss.backward()
-    
-    print(loss)
+    previous_loss = 0
+    for i in range(5):
+
+        pred = model(X)
+        loss = (pred - Y).sum()
+        loss.backward()
+
+        optimizer.step()
+        optimizer.zero_grad()
+
+        assert loss.item() < previous_loss
+        previous_loss = loss.item()
     
         
 if __name__ == '__main__':
-    run()
+    test_cactus_linear_torch()
