@@ -99,20 +99,16 @@ def test_torch_matmul_cactus():
 def test_cactus_linear_torch():
     X = torch.randn(8, 8, dtype=torch.float16)
     Y = X * 2
-
     model = CactusLinearTorch(8, 8)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
     previous_loss = 0
     for i in range(5):
-
         pred = model(X)
         loss = (pred - Y).sum()
         loss.backward()
-
         optimizer.step()
         optimizer.zero_grad()
-
         assert loss.item() < previous_loss
         previous_loss = loss.item()
     
