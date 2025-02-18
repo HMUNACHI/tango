@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fprotobuff.proto\x12\tprotobuff\"d\n\x0bTaskRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x11\n\toperation\x18\x02 \x01(\t\x12\x0e\n\x06\x61_data\x18\x03 \x01(\x0c\x12\x0e\n\x06\x62_data\x18\x04 \x01(\x0c\x12\x12\n\nnum_splits\x18\x05 \x01(\x05\"1\n\x0cTaskResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"v\n\nDeviceInfo\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x16\n\x0einternet_speed\x18\x02 \x01(\x02\x12\x15\n\ravailable_ram\x18\x03 \x01(\x05\x12\x11\n\tcpu_usage\x18\x04 \x01(\x05\x12\x13\n\x0bis_charging\x18\x05 \x01(\x08\"5\n\x0e\x44\x65viceResponse\x12\x12\n\nregistered\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x94\x01\n\x0c\x44\x65viceStatus\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x1a\n\x12tasks_in_last_hour\x18\x02 \x01(\x05\x12\x11\n\tcpu_usage\x18\x03 \x01(\x02\x12\x15\n\ravailable_ram\x18\x04 \x01(\x05\x12\x16\n\x0einternet_speed\x18\x05 \x01(\x02\x12\x13\n\x0bis_charging\x18\x06 \x01(\x08\"8\n\x14\x44\x65viceStatusResponse\x12\x0f\n\x07updated\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\"\n\rDeviceRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"d\n\x0eTaskAssignment\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x0f\n\x07task_id\x18\x02 \x01(\t\x12\x11\n\toperation\x18\x03 \x01(\t\x12\x0e\n\x06\x61_data\x18\x04 \x01(\x0c\x12\x0e\n\x06\x62_data\x18\x05 \x01(\x0c\"U\n\nTaskResult\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07task_id\x18\x03 \x01(\t\x12\x13\n\x0bresult_data\x18\x04 \x01(\x0c\"2\n\x0eResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\"\n\x10JobStatusRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"L\n\x0eJobStatusReply\x12\x13\n\x0bis_complete\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x14\n\x0c\x66inal_result\x18\x03 \x01(\x0c\x32\xb9\x03\n\x0cTangoService\x12?\n\nSubmitTask\x12\x16.protobuff.TaskRequest\x1a\x17.protobuff.TaskResponse\"\x00\x12\x44\n\x0eRegisterDevice\x12\x15.protobuff.DeviceInfo\x1a\x19.protobuff.DeviceResponse\"\x00\x12P\n\x12UpdateDeviceStatus\x12\x17.protobuff.DeviceStatus\x1a\x1f.protobuff.DeviceStatusResponse\"\x00\x12\x42\n\tFetchTask\x12\x18.protobuff.DeviceRequest\x1a\x19.protobuff.TaskAssignment\"\x00\x12\x42\n\x0cReportResult\x12\x15.protobuff.TaskResult\x1a\x19.protobuff.ResultResponse\"\x00\x12H\n\x0cGetJobStatus\x12\x1b.protobuff.JobStatusRequest\x1a\x19.protobuff.JobStatusReply\"\x00\x42\x1dZ\x1b\x63\x61\x63tus/tango/src; protobuffb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fprotobuff.proto\x12\tprotobuff\"\x85\x01\n\x0bTaskRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x11\n\toperation\x18\x02 \x01(\t\x12\x0e\n\x06\x61_data\x18\x03 \x01(\x0c\x12\x0e\n\x06\x62_data\x18\x04 \x01(\x0c\x12\x12\n\nnum_splits\x18\x05 \x01(\x05\x12\t\n\x01m\x18\x06 \x01(\x05\x12\t\n\x01n\x18\x07 \x01(\x05\x12\t\n\x01\x64\x18\x08 \x01(\x05\"1\n\x0cTaskResponse\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"v\n\nDeviceInfo\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x16\n\x0einternet_speed\x18\x02 \x01(\x02\x12\x15\n\ravailable_ram\x18\x03 \x01(\x05\x12\x11\n\tcpu_usage\x18\x04 \x01(\x05\x12\x13\n\x0bis_charging\x18\x05 \x01(\x08\"5\n\x0e\x44\x65viceResponse\x12\x12\n\nregistered\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x94\x01\n\x0c\x44\x65viceStatus\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x1a\n\x12tasks_in_last_hour\x18\x02 \x01(\x05\x12\x11\n\tcpu_usage\x18\x03 \x01(\x02\x12\x15\n\ravailable_ram\x18\x04 \x01(\x05\x12\x16\n\x0einternet_speed\x18\x05 \x01(\x02\x12\x13\n\x0bis_charging\x18\x06 \x01(\x08\"8\n\x14\x44\x65viceStatusResponse\x12\x0f\n\x07updated\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\"\n\rDeviceRequest\x12\x11\n\tdevice_id\x18\x01 \x01(\t\"\x99\x01\n\x0eTaskAssignment\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x0f\n\x07task_id\x18\x02 \x01(\t\x12\x11\n\toperation\x18\x03 \x01(\t\x12\x0e\n\x06\x61_data\x18\x04 \x01(\x0c\x12\x0e\n\x06\x62_data\x18\x05 \x01(\x0c\x12\t\n\x01m\x18\x06 \x01(\x05\x12\t\n\x01n\x18\x07 \x01(\x05\x12\t\n\x01\x64\x18\x08 \x01(\x05\x12\x12\n\nnum_splits\x18\t \x01(\x05\"U\n\nTaskResult\x12\x11\n\tdevice_id\x18\x01 \x01(\t\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x0f\n\x07task_id\x18\x03 \x01(\t\x12\x13\n\x0bresult_data\x18\x04 \x01(\x0c\"2\n\x0eResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\"\n\x10JobStatusRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"L\n\x0eJobStatusReply\x12\x13\n\x0bis_complete\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x14\n\x0c\x66inal_result\x18\x03 \x01(\x0c\x32\xb9\x03\n\x0cTangoService\x12?\n\nSubmitTask\x12\x16.protobuff.TaskRequest\x1a\x17.protobuff.TaskResponse\"\x00\x12\x44\n\x0eRegisterDevice\x12\x15.protobuff.DeviceInfo\x1a\x19.protobuff.DeviceResponse\"\x00\x12P\n\x12UpdateDeviceStatus\x12\x17.protobuff.DeviceStatus\x1a\x1f.protobuff.DeviceStatusResponse\"\x00\x12\x42\n\tFetchTask\x12\x18.protobuff.DeviceRequest\x1a\x19.protobuff.TaskAssignment\"\x00\x12\x42\n\x0cReportResult\x12\x15.protobuff.TaskResult\x1a\x19.protobuff.ResultResponse\"\x00\x12H\n\x0cGetJobStatus\x12\x1b.protobuff.JobStatusRequest\x1a\x19.protobuff.JobStatusReply\"\x00\x42\x1dZ\x1b\x63\x61\x63tus/tango/src; protobuffb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,30 +32,30 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'protobuff_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z\033cactus/tango/src; protobuff'
-  _globals['_TASKREQUEST']._serialized_start=30
-  _globals['_TASKREQUEST']._serialized_end=130
-  _globals['_TASKRESPONSE']._serialized_start=132
-  _globals['_TASKRESPONSE']._serialized_end=181
-  _globals['_DEVICEINFO']._serialized_start=183
-  _globals['_DEVICEINFO']._serialized_end=301
-  _globals['_DEVICERESPONSE']._serialized_start=303
-  _globals['_DEVICERESPONSE']._serialized_end=356
-  _globals['_DEVICESTATUS']._serialized_start=359
-  _globals['_DEVICESTATUS']._serialized_end=507
-  _globals['_DEVICESTATUSRESPONSE']._serialized_start=509
-  _globals['_DEVICESTATUSRESPONSE']._serialized_end=565
-  _globals['_DEVICEREQUEST']._serialized_start=567
-  _globals['_DEVICEREQUEST']._serialized_end=601
-  _globals['_TASKASSIGNMENT']._serialized_start=603
-  _globals['_TASKASSIGNMENT']._serialized_end=703
-  _globals['_TASKRESULT']._serialized_start=705
-  _globals['_TASKRESULT']._serialized_end=790
-  _globals['_RESULTRESPONSE']._serialized_start=792
-  _globals['_RESULTRESPONSE']._serialized_end=842
-  _globals['_JOBSTATUSREQUEST']._serialized_start=844
-  _globals['_JOBSTATUSREQUEST']._serialized_end=878
-  _globals['_JOBSTATUSREPLY']._serialized_start=880
-  _globals['_JOBSTATUSREPLY']._serialized_end=956
-  _globals['_TANGOSERVICE']._serialized_start=959
-  _globals['_TANGOSERVICE']._serialized_end=1400
+  _globals['_TASKREQUEST']._serialized_start=31
+  _globals['_TASKREQUEST']._serialized_end=164
+  _globals['_TASKRESPONSE']._serialized_start=166
+  _globals['_TASKRESPONSE']._serialized_end=215
+  _globals['_DEVICEINFO']._serialized_start=217
+  _globals['_DEVICEINFO']._serialized_end=335
+  _globals['_DEVICERESPONSE']._serialized_start=337
+  _globals['_DEVICERESPONSE']._serialized_end=390
+  _globals['_DEVICESTATUS']._serialized_start=393
+  _globals['_DEVICESTATUS']._serialized_end=541
+  _globals['_DEVICESTATUSRESPONSE']._serialized_start=543
+  _globals['_DEVICESTATUSRESPONSE']._serialized_end=599
+  _globals['_DEVICEREQUEST']._serialized_start=601
+  _globals['_DEVICEREQUEST']._serialized_end=635
+  _globals['_TASKASSIGNMENT']._serialized_start=638
+  _globals['_TASKASSIGNMENT']._serialized_end=791
+  _globals['_TASKRESULT']._serialized_start=793
+  _globals['_TASKRESULT']._serialized_end=878
+  _globals['_RESULTRESPONSE']._serialized_start=880
+  _globals['_RESULTRESPONSE']._serialized_end=930
+  _globals['_JOBSTATUSREQUEST']._serialized_start=932
+  _globals['_JOBSTATUSREQUEST']._serialized_end=966
+  _globals['_JOBSTATUSREPLY']._serialized_start=968
+  _globals['_JOBSTATUSREPLY']._serialized_end=1044
+  _globals['_TANGOSERVICE']._serialized_start=1047
+  _globals['_TANGOSERVICE']._serialized_end=1488
 # @@protoc_insertion_point(module_scope)

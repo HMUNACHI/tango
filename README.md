@@ -17,11 +17,11 @@
 ## Python Consumer and Producer
 1. Run consumer:
    ```
-   python3 test/consumer.py
+   python3 test/ml_script.py
    ```
 2. Run producer:
    ```
-   python3 test/producer.py
+   python3 test/device_simulator.py
    ```
 
 ## Key concepts 

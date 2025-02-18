@@ -21,6 +21,9 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 		Operation:       req.Operation,
 		AData:           req.AData,
 		BData:           req.BData,
+		m:               req.M,
+		n:               req.N,
+		d:               req.D,
 		ExpectedSplits:  int(req.NumSplits),
 		AssignedSplits:  0,
 		ReceivedUpdates: 0,
@@ -62,6 +65,10 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 				Operation: job.Operation,
 				AData:     job.AData,
 				BData:     job.BData,
+				M:         job.m,
+				N:         job.n,
+				D:         job.d,
+				NumSplits: int32(job.ExpectedSplits),
 			}
 			return assignment, nil
 		}

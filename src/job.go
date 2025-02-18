@@ -17,6 +17,9 @@ type Job struct {
 	Operation       string
 	AData           []byte
 	BData           []byte
+	m               int32
+	n               int32
+	d               int32
 	ExpectedSplits  int
 	AssignedSplits  int
 	ReceivedUpdates int
