@@ -4,10 +4,39 @@ import protobuff_pb2 as pb
 import protobuff_pb2_grpc as pb_grpc
 import numpy as np
 
+class _ClientCallDetails(grpc.ClientCallDetails):
+    def __init__(self, method, timeout, metadata, credentials, wait_for_ready, compression):
+        self.method = method
+        self.timeout = timeout
+        self.metadata = metadata
+        self.credentials = credentials
+        self.wait_for_ready = wait_for_ready
+        self.compression = compression
+
+class TokenClientInterceptor(grpc.UnaryUnaryClientInterceptor):
+    def __init__(self, token):
+        self.token = token
+
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        metadata = []
+        if client_call_details.metadata is not None:
+            metadata = list(client_call_details.metadata)
+        metadata.append(("cactus-token", self.token))
+        new_details = _ClientCallDetails(
+            client_call_details.method,
+            client_call_details.timeout,
+            metadata,
+            client_call_details.credentials,
+            client_call_details.wait_for_ready,
+            client_call_details.compression
+        )
+        return continuation(new_details, request)
+
 def run():
-    # Connect to the gRPC server.
+    # Replace the channel creation with an intercepted channel.
     channel = grpc.insecure_channel('localhost:50051')
-    stub = pb_grpc.TangoServiceStub(channel)
+    intercept_channel = grpc.intercept_channel(channel, TokenClientInterceptor("test4956"))  # Modified
+    stub = pb_grpc.TangoServiceStub(intercept_channel)  # Modified
     
     # Register this device as a compute provider.
     device_id = "device1"

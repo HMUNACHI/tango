@@ -7,9 +7,6 @@ import (
 	"log"
 )
 
-// SubmitTask creates a new Job using the provided TaskRequest.
-// The request now includes the Operation, AData, and BData fields.
-// AData and BData are expected to carry the binary (e.g. fp16) data for the respective operands.
 func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -38,14 +35,12 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 	}, nil
 }
 
-// FetchTask assigns a task to a requesting device.
-// It returns a TaskAssignment that includes the operation to perform and the operands (AData and BData).
 func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.TaskAssignment, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	log.Printf("Device %s requesting a task", req.DeviceId)
-	// Iterate over the jobQueue in FIFO order.
+
 	for _, jobID := range s.jobQueue {
 		job, exists := s.jobs[jobID]
 		if !exists {

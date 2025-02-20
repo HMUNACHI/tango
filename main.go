@@ -12,17 +12,14 @@ import (
 )
 
 func main() {
-	// Start listening on TCP port 50051.
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(tango.TokenInterceptor))
 	tangoServer := tango.NewServer()
 	pb.RegisterTangoServiceServer(grpcServer, tangoServer)
-
-	// Enable reflection for debugging.
 	reflection.Register(grpcServer)
 
 	log.Println("Tango server is running on port :50051")

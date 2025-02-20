@@ -5,13 +5,6 @@ import (
 	"context"
 )
 
-// Job represents a distributed computation job.
-// - Operation specifies the computation to perform (e.g., "matmul").
-// - AData and BData hold the binary fp16 data for operands.
-// - ExpectedSplits is the total number of tasks for this job.
-// - AssignedSplits and ReceivedUpdates track task distribution and result progress.
-// - Results stores individual C_shard outputs (binary data).
-// - FinalResult holds the aggregated result after all shards have been processed.
 type Job struct {
 	JobID           string
 	Operation       string
@@ -27,8 +20,6 @@ type Job struct {
 	FinalResult     []byte // New: holds the final aggregated C_shards.
 }
 
-// GetJobStatus returns the current status of the job.
-// When all shards have been received, it returns the FinalResult.
 func (s *server) GetJobStatus(ctx context.Context, req *pb.JobStatusRequest) (*pb.JobStatusReply, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
