@@ -5,11 +5,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 )
 
 func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.jobsMu.Lock()
+	defer s.jobsMu.Unlock()
 
 	log.Printf("Received new job submission: %s expecting %d splits", req.JobId, req.NumSplits)
 
@@ -26,7 +27,15 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 		ReceivedUpdates: 0,
 		Results:         make(map[int][]byte),
 		ScaleBytes:      req.ScaleBytes,
-		ScaleScalar:     req.ScaleScalar,
+		ScaleScalar: func() float32 {
+			if req.ScaleScalar != nil {
+				return *req.ScaleScalar
+			} else {
+				return 0
+			}
+		}(),
+		// Initialize pending tasks map.
+		PendingTasks: make(map[int]TimeDeadline),
 	}
 	s.jobs[req.JobId] = job
 	s.jobQueue = append(s.jobQueue, req.JobId)
@@ -38,24 +47,40 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 }
 
 func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.TaskAssignment, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.jobsMu.Lock()
+	defer s.jobsMu.Unlock()
 
 	log.Printf("Device %s requesting a task", req.DeviceId)
-
+	now := time.Now().UnixNano()
 	for _, jobID := range s.jobQueue {
 		job, exists := s.jobs[jobID]
 		if !exists {
 			continue
 		}
-
-		if job.AssignedSplits < job.ExpectedSplits {
-			job.AssignedSplits++
-
-			taskID := fmt.Sprintf("%s_%d", job.JobID, job.AssignedSplits)
-
-			log.Printf("Assigning task %s (split %d of job %s) to device %s",
-				taskID, job.AssignedSplits, job.JobID, req.DeviceId)
+		// Try to find a shard index that is not yet completed.
+		var shardIndex int
+		found := false
+		for i := 1; i <= job.ExpectedSplits; i++ {
+			if _, done := job.Results[i]; done {
+				continue // already completed
+			}
+			// If task is not pending or its deadline has expired, assign it.
+			if td, pending := job.PendingTasks[i]; !pending || now > td.Deadline {
+				shardIndex = i
+				found = true
+				// Mark as pending: deadline = now + 1 second.
+				job.PendingTasks[i] = TimeDeadline{Deadline: time.Now().Add(time.Second).UnixNano()}
+				// Increase AssignedSplits only if first time assignment.
+				if !pending {
+					job.AssignedSplits++
+				}
+				break
+			}
+		}
+		if found {
+			taskID := fmt.Sprintf("%s_%d", job.JobID, shardIndex)
+			log.Printf("Assigning task %s (shard %d of job %s) to device %s",
+				taskID, shardIndex, job.JobID, req.DeviceId)
 			assignment := &pb.TaskAssignment{
 				JobId:       job.JobID,
 				TaskId:      taskID,
@@ -67,7 +92,7 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 				D:           job.d,
 				NumSplits:   int32(job.ExpectedSplits),
 				ScaleBytes:  job.ScaleBytes,
-				ScaleScalar: req.ScaleScalar,
+				ScaleScalar: &job.ScaleScalar,
 			}
 			return assignment, nil
 		}

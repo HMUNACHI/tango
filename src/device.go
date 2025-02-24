@@ -7,8 +7,8 @@ import (
 )
 
 func (s *server) RegisterDevice(ctx context.Context, info *pb.DeviceInfo) (*pb.DeviceResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.devicesMu.Lock()
+	defer s.devicesMu.Unlock()
 
 	log.Printf("Registering device %s", info.DeviceId)
 
@@ -20,8 +20,8 @@ func (s *server) RegisterDevice(ctx context.Context, info *pb.DeviceInfo) (*pb.D
 }
 
 func (s *server) UpdateDeviceStatus(ctx context.Context, status *pb.DeviceStatus) (*pb.DeviceStatusResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.devicesMu.Lock()
+	defer s.devicesMu.Unlock()
 
 	log.Printf("Updating status for device %s", status.DeviceId)
 	if device, exists := s.registeredDevices[status.DeviceId]; exists {

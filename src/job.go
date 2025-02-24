@@ -20,11 +20,18 @@ type Job struct {
 	FinalResult     []byte
 	ScaleBytes      []byte
 	ScaleScalar     float32
+	// New: tracks pending tasks with deadlines keyed by shard index.
+	PendingTasks map[int]TimeDeadline
+}
+
+// TimeDeadline encapsulates the deadline for a task.
+type TimeDeadline struct {
+	Deadline int64 // Unix nano timestamp
 }
 
 func (s *server) GetJobStatus(ctx context.Context, req *pb.JobStatusRequest) (*pb.JobStatusReply, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.jobsMu.Lock()
+	defer s.jobsMu.Unlock()
 
 	job, exists := s.jobs[req.JobId]
 	if !exists {

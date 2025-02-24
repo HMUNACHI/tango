@@ -11,8 +11,8 @@ import (
 )
 
 func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.ResultResponse, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.jobsMu.Lock()
+	defer s.jobsMu.Unlock()
 
 	log.Printf("Received result for task %s of job %s from device %s", res.TaskId, res.JobId, res.DeviceId)
 
@@ -35,6 +35,9 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 	if job.Results == nil {
 		job.Results = make(map[int][]byte)
 	}
+
+	// Clear pending record for the shard.
+	delete(job.PendingTasks, shardIndex)
 
 	job.Results[shardIndex] = []byte(res.ResultData)
 
