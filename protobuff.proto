@@ -15,13 +15,16 @@ service TangoService {
 
 message TaskRequest {
   string job_id = 1;
-  string operation = 2;   // Specifies the operation (e.g., "matmul", "add", "divide", "hadamard", "cos", "sin")
-  bytes a_data = 3;       // Contains the binary fp16 data for A shards
-  bytes b_data = 4;       // Contains the binary fp16 data for B shards (if applicable)
-  int32 num_splits = 5;
-  int32 m = 6;
-  int32 n = 7;
-  int32 d = 8;
+  string operation = 2;   
+  bytes a_data = 3;   
+  bytes b_data = 4;  
+  optional bytes w_data = 5;
+  optional bytes scale_bytes = 6; 
+  optional float scale_scalar = 7; 
+  int32 num_splits = 8;
+  int32 m = 9;
+  int32 n = 10;
+  int32 d = 11;
 }
 
 message TaskResponse {
@@ -63,20 +66,23 @@ message DeviceRequest {
 message TaskAssignment {
   string job_id = 1;
   string task_id = 2;
-  string operation = 3;   // Informs the worker which operation to perform
-  bytes a_data = 4;       // Operand A shards
-  bytes b_data = 5;       // Operand B shards
-  int32 m = 6;
-  int32 n = 7;
-  int32 d = 8;
-  int32 num_splits = 9;   // New: total splits for the job
+  string operation = 3;   
+  bytes a_data = 4;      
+  bytes b_data = 5; 
+  optional bytes w_data = 6;
+  optional bytes scale_bytes = 7; 
+  optional float scale_scalar = 8; 
+  int32 num_splits = 9;
+  int32 m = 10;
+  int32 n = 11;
+  int32 d = 12;
 }
 
 message TaskResult {
   string device_id = 1;
   string job_id = 2;
   string task_id = 3;
-  bytes result_data = 4;  // Contains the binary result (e.g., a C_shard)
+  bytes result_data = 4; 
 }
 
 message ResultResponse {
@@ -91,5 +97,5 @@ message JobStatusRequest {
 message JobStatusReply {
   bool is_complete = 1;
   string message = 2;
-  bytes final_result = 3; // Final aggregated result (e.g., reassembled C_shards)
+  bytes final_result = 3;
 }

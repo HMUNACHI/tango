@@ -25,6 +25,8 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 		AssignedSplits:  0,
 		ReceivedUpdates: 0,
 		Results:         make(map[int][]byte),
+		ScaleBytes:      req.ScaleBytes,
+		ScaleScalar:     req.ScaleScalar,
 	}
 	s.jobs[req.JobId] = job
 	s.jobQueue = append(s.jobQueue, req.JobId)
@@ -55,15 +57,17 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 			log.Printf("Assigning task %s (split %d of job %s) to device %s",
 				taskID, job.AssignedSplits, job.JobID, req.DeviceId)
 			assignment := &pb.TaskAssignment{
-				JobId:     job.JobID,
-				TaskId:    taskID,
-				Operation: job.Operation,
-				AData:     job.AData,
-				BData:     job.BData,
-				M:         job.m,
-				N:         job.n,
-				D:         job.d,
-				NumSplits: int32(job.ExpectedSplits),
+				JobId:       job.JobID,
+				TaskId:      taskID,
+				Operation:   job.Operation,
+				AData:       job.AData,
+				BData:       job.BData,
+				M:           job.m,
+				N:           job.n,
+				D:           job.d,
+				NumSplits:   int32(job.ExpectedSplits),
+				ScaleBytes:  job.ScaleBytes,
+				ScaleScalar: req.ScaleScalar,
 			}
 			return assignment, nil
 		}

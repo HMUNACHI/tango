@@ -17,7 +17,9 @@ type Job struct {
 	AssignedSplits  int
 	ReceivedUpdates int
 	Results         map[int][]byte
-	FinalResult     []byte // New: holds the final aggregated C_shards.
+	FinalResult     []byte
+	ScaleBytes      []byte
+	ScaleScalar     float32
 }
 
 func (s *server) GetJobStatus(ctx context.Context, req *pb.JobStatusRequest) (*pb.JobStatusReply, error) {
@@ -35,7 +37,7 @@ func (s *server) GetJobStatus(ctx context.Context, req *pb.JobStatusRequest) (*p
 		return &pb.JobStatusReply{
 			IsComplete:  true,
 			Message:     "Job is complete.",
-			FinalResult: job.FinalResult, // Return the aggregated C_shards.
+			FinalResult: job.FinalResult,
 		}, nil
 	}
 	return &pb.JobStatusReply{

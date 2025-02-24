@@ -33,12 +33,10 @@ class TokenClientInterceptor(grpc.UnaryUnaryClientInterceptor):
         return continuation(new_details, request)
 
 def run():
-    # Replace the channel creation with an intercepted channel.
     channel = grpc.insecure_channel('localhost:50051')
     intercept_channel = grpc.intercept_channel(channel, TokenClientInterceptor("test4956"))  # Modified
     stub = pb_grpc.TangoServiceStub(intercept_channel)  # Modified
     
-    # Register this device as a compute provider.
     device_id = "device1"
     device_info = pb.DeviceInfo(
         device_id=device_id,
@@ -50,7 +48,6 @@ def run():
     reg_response = stub.RegisterDevice(device_info)
     print("RegisterDevice response:", reg_response.message)
     
-    # Optionally update device status.
     device_status = pb.DeviceStatus(
         device_id=device_id,
         tasks_in_last_hour=0,
@@ -62,7 +59,6 @@ def run():
     status_response = stub.UpdateDeviceStatus(device_status)
     print("UpdateDeviceStatus response:", status_response.message)
     
-    # Fetch a task from the server.
     device_request = pb.DeviceRequest(device_id=device_id)
     
     print("Fetching task...")
@@ -75,10 +71,6 @@ def run():
             print("  Task ID:", task_assignment.task_id)
             print("  Operation:", task_assignment.operation)
             
-            # For the "matmul" operation:
-            # - a_data contains the concatenated binary chunks of A.
-            # - b_data contains the full matrix B.
-            
             a_data = task_assignment.a_data
             b_data = task_assignment.b_data
             m = task_assignment.m
@@ -88,32 +80,25 @@ def run():
             m_chunk = m // num_splits
             bytes = 2
             
-            # Extract the shard index from the task_id using rsplit to only split once.
             task_id_parts = task_assignment.task_id.rsplit('_', 1)
             if len(task_id_parts) != 2:
                 raise ValueError("Invalid task_id format")
             shard_index = int(task_id_parts[1])  # This is 1-indexed; adjust to 0-indexed.
             chunk_index = shard_index - 1
             
-            # Calculate byte size for each A_chunk: each chunk is (2x8) with 16 elements at 2 bytes each.
             chunk_byte_size = m_chunk * n * bytes
             
             start = chunk_index * chunk_byte_size
             end = start + chunk_byte_size
             a_chunk_bytes = a_data[start:end]
             
-            # Convert the binary data to numpy arrays.
-            # A_chunk will be of shape (m_chunk, d) and B_full of shape (d, n)
             A_chunk = np.frombuffer(a_chunk_bytes, dtype=np.float16).reshape(m_chunk, d)
             B_full = np.frombuffer(b_data, dtype=np.float16).reshape(d, n)
             
-            # Perform matrix multiplication: each worker computes its result chunk.
             result_chunk = np.matmul(A_chunk, B_full)
             
-            # Convert the result chunk to binary data.
             result_bytes = result_chunk.tobytes()
             
-            # Create a TaskResult message with the computed binary result.
             task_result = pb.TaskResult(
                 device_id=device_id,
                 job_id=task_assignment.job_id,
