@@ -8,13 +8,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var approvedTokens = []string{
-	"test4956",
-	"test8632",
-}
-
 func validateToken(token string) bool {
-	for _, t := range approvedTokens {
+	for _, t := range AppConfig.Tokens.Approved {
 		if token == t {
 			return true
 		}

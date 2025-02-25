@@ -48,7 +48,7 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 		if err != nil {
 			log.Printf("Job %s complete, but failed to reassemble C_shards: %v", job.JobID, err)
 		} else {
-			log.Printf("Job %s complete. Final aggregated result: %v", job.JobID, finalResult)
+			log.Printf("Job %s complete", job.JobID)
 			job.FinalResult = finalResult
 		}
 	}

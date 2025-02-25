@@ -1,0 +1,16 @@
+server:
+  host: "localhost"
+  port: 50051
+
+tokens:
+  approved:
+    - test4956
+    - test8632
+
+task:
+  timeout_seconds: 1
+  reaper_interval_milliseconds: 500
+
+logging:
+  level: "INFO"
+  file: "server.log"

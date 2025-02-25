@@ -34,7 +34,6 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 				return 0
 			}
 		}(),
-		// Initialize pending tasks map.
 		PendingTasks: make(map[int]TimeDeadline),
 	}
 	s.jobs[req.JobId] = job
@@ -57,20 +56,21 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 		if !exists {
 			continue
 		}
-		// Try to find a shard index that is not yet completed.
 		var shardIndex int
 		found := false
 		for i := 1; i <= job.ExpectedSplits; i++ {
 			if _, done := job.Results[i]; done {
-				continue // already completed
+				continue
 			}
-			// If task is not pending or its deadline has expired, assign it.
 			if td, pending := job.PendingTasks[i]; !pending || now > td.Deadline {
 				shardIndex = i
 				found = true
-				// Mark as pending: deadline = now + 1 second.
-				job.PendingTasks[i] = TimeDeadline{Deadline: time.Now().Add(time.Second).UnixNano()}
-				// Increase AssignedSplits only if first time assignment.
+				// Record the deadline and device id.
+				job.PendingTasks[i] = TimeDeadline{
+					Deadline: time.Now().Add(time.Second).UnixNano(),
+					DeviceID: req.DeviceId,
+				}
+				// Increase AssignedSplits only if task is not already pending.
 				if !pending {
 					job.AssignedSplits++
 				}

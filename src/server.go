@@ -21,14 +21,14 @@ func NewServer() *server {
 		jobs:              make(map[string]*Job),
 		jobQueue:          make([]string, 0),
 	}
-	// Launch background reaper
+	// use configured reaper interval from AppConfig.Task.ReaperIntervalMilliseconds
 	go s.reapExpiredTasks()
 	return s
 }
 
-// reapExpiredTasks periodically scans jobs to remove tasks that timed out.
 func (s *server) reapExpiredTasks() {
-	ticker := time.NewTicker(500 * time.Millisecond)
+	interval := time.Duration(AppConfig.Task.ReaperIntervalMilliseconds) * time.Millisecond
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for range ticker.C {
 		now := time.Now().UnixNano()
@@ -36,12 +36,22 @@ func (s *server) reapExpiredTasks() {
 		for _, job := range s.jobs {
 			for shard, td := range job.PendingTasks {
 				if now > td.Deadline {
-					// Timed-out task: remove pending record and allow re-assignment.
 					delete(job.PendingTasks, shard)
-					// Optionally log and adjust AssignedSplits if needed.
 				}
 			}
 		}
 		s.jobsMu.Unlock()
+	}
+}
+
+func (s *server) RemoveDevicePendingTasks(deviceID string) {
+	s.jobsMu.Lock()
+	defer s.jobsMu.Unlock()
+	for _, job := range s.jobs {
+		for shard, td := range job.PendingTasks {
+			if td.DeviceID == deviceID {
+				delete(job.PendingTasks, shard)
+			}
+		}
 	}
 }
