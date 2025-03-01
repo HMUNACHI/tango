@@ -36,7 +36,6 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 		job.Results = make(map[int][]byte)
 	}
 
-	// Clear pending record for the shard.
 	delete(job.PendingTasks, shardIndex)
 
 	job.Results[shardIndex] = []byte(res.ResultData)
