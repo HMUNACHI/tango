@@ -8,20 +8,16 @@ import (
 
 type server struct {
 	pb.UnimplementedTangoServiceServer
-	devicesMu         sync.Mutex
-	jobsMu            sync.Mutex
-	registeredDevices map[string]*pb.DeviceInfo
-	jobs              map[string]*Job
-	jobQueue          []string
+	jobsMu   sync.Mutex
+	jobs     map[string]*Job
+	jobQueue []string
 }
 
 func NewServer() *server {
 	s := &server{
-		registeredDevices: make(map[string]*pb.DeviceInfo),
-		jobs:              make(map[string]*Job),
-		jobQueue:          make([]string, 0),
+		jobs:     make(map[string]*Job),
+		jobQueue: make([]string, 0),
 	}
-	// use configured reaper interval from AppConfig.Task.ReaperIntervalMilliseconds
 	go s.reapExpiredTasks()
 	return s
 }

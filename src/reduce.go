@@ -14,8 +14,6 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 	s.jobsMu.Lock()
 	defer s.jobsMu.Unlock()
 
-	log.Printf("Received result for task %s of job %s from device %s", res.TaskId, res.JobId, res.DeviceId)
-
 	job, exists := s.jobs[res.JobId]
 	if !exists {
 		return &pb.ResultResponse{
@@ -47,7 +45,6 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 		if err != nil {
 			log.Printf("Job %s complete, but failed to reassemble C_shards: %v", job.JobID, err)
 		} else {
-			log.Printf("Job %s complete", job.JobID)
 			job.FinalResult = finalResult
 		}
 	}

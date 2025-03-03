@@ -49,6 +49,10 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 	s.jobsMu.Lock()
 	defer s.jobsMu.Unlock()
 
+	if !isAllowedDevice(req.DeviceId) {
+		return nil, fmt.Errorf("device %s not allowed", req.DeviceId)
+	}
+
 	log.Printf("Device %s requesting a task", req.DeviceId)
 	now := time.Now().UnixNano()
 	for _, jobID := range s.jobQueue {
@@ -65,12 +69,10 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 			if td, pending := job.PendingTasks[i]; !pending || now > td.Deadline {
 				shardIndex = i
 				found = true
-				// Record the deadline and device id.
 				job.PendingTasks[i] = TimeDeadline{
 					Deadline: time.Now().Add(time.Second).UnixNano(),
 					DeviceID: req.DeviceId,
 				}
-				// Increase AssignedSplits only if task is not already pending.
 				if !pending {
 					job.AssignedSplits++
 				}

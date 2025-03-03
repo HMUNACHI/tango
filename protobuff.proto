@@ -6,8 +6,6 @@ package protobuff;
 
 service TangoService {
   rpc SubmitTask(TaskRequest) returns (TaskResponse) {}
-  rpc RegisterDevice(DeviceInfo) returns (DeviceResponse) {}
-  rpc UpdateDeviceStatus(DeviceStatus) returns (DeviceStatusResponse) {}
   rpc FetchTask(DeviceRequest) returns (TaskAssignment) {}
   rpc ReportResult(TaskResult) returns (ResultResponse) {}
   rpc GetJobStatus(JobStatusRequest) returns (JobStatusReply) {}
@@ -29,33 +27,6 @@ message TaskRequest {
 
 message TaskResponse {
   bool accepted = 1;
-  string message = 2;
-}
-
-message DeviceInfo {
-  string device_id = 1;
-  float internet_speed = 2;
-  int32 available_ram = 3;
-  int32 cpu_usage = 4;
-  bool is_charging = 5;
-}
-
-message DeviceResponse {
-  bool registered = 1;
-  string message = 2;
-}
-
-message DeviceStatus {
-  string device_id = 1;
-  int32 tasks_in_last_hour = 2;
-  float cpu_usage = 3;
-  int32 available_ram = 4;
-  float internet_speed = 5;
-  bool is_charging = 6;
-}
-
-message DeviceStatusResponse {
-  bool updated = 1;
   string message = 2;
 }
 

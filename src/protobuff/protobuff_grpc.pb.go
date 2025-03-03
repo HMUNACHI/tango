@@ -19,12 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TangoService_SubmitTask_FullMethodName         = "/protobuff.TangoService/SubmitTask"
-	TangoService_RegisterDevice_FullMethodName     = "/protobuff.TangoService/RegisterDevice"
-	TangoService_UpdateDeviceStatus_FullMethodName = "/protobuff.TangoService/UpdateDeviceStatus"
-	TangoService_FetchTask_FullMethodName          = "/protobuff.TangoService/FetchTask"
-	TangoService_ReportResult_FullMethodName       = "/protobuff.TangoService/ReportResult"
-	TangoService_GetJobStatus_FullMethodName       = "/protobuff.TangoService/GetJobStatus"
+	TangoService_SubmitTask_FullMethodName   = "/protobuff.TangoService/SubmitTask"
+	TangoService_FetchTask_FullMethodName    = "/protobuff.TangoService/FetchTask"
+	TangoService_ReportResult_FullMethodName = "/protobuff.TangoService/ReportResult"
+	TangoService_GetJobStatus_FullMethodName = "/protobuff.TangoService/GetJobStatus"
 )
 
 // TangoServiceClient is the client API for TangoService service.
@@ -32,8 +30,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TangoServiceClient interface {
 	SubmitTask(ctx context.Context, in *TaskRequest, opts ...grpc.CallOption) (*TaskResponse, error)
-	RegisterDevice(ctx context.Context, in *DeviceInfo, opts ...grpc.CallOption) (*DeviceResponse, error)
-	UpdateDeviceStatus(ctx context.Context, in *DeviceStatus, opts ...grpc.CallOption) (*DeviceStatusResponse, error)
 	FetchTask(ctx context.Context, in *DeviceRequest, opts ...grpc.CallOption) (*TaskAssignment, error)
 	ReportResult(ctx context.Context, in *TaskResult, opts ...grpc.CallOption) (*ResultResponse, error)
 	GetJobStatus(ctx context.Context, in *JobStatusRequest, opts ...grpc.CallOption) (*JobStatusReply, error)
@@ -51,26 +47,6 @@ func (c *tangoServiceClient) SubmitTask(ctx context.Context, in *TaskRequest, op
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TaskResponse)
 	err := c.cc.Invoke(ctx, TangoService_SubmitTask_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tangoServiceClient) RegisterDevice(ctx context.Context, in *DeviceInfo, opts ...grpc.CallOption) (*DeviceResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeviceResponse)
-	err := c.cc.Invoke(ctx, TangoService_RegisterDevice_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *tangoServiceClient) UpdateDeviceStatus(ctx context.Context, in *DeviceStatus, opts ...grpc.CallOption) (*DeviceStatusResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeviceStatusResponse)
-	err := c.cc.Invoke(ctx, TangoService_UpdateDeviceStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +88,6 @@ func (c *tangoServiceClient) GetJobStatus(ctx context.Context, in *JobStatusRequ
 // for forward compatibility.
 type TangoServiceServer interface {
 	SubmitTask(context.Context, *TaskRequest) (*TaskResponse, error)
-	RegisterDevice(context.Context, *DeviceInfo) (*DeviceResponse, error)
-	UpdateDeviceStatus(context.Context, *DeviceStatus) (*DeviceStatusResponse, error)
 	FetchTask(context.Context, *DeviceRequest) (*TaskAssignment, error)
 	ReportResult(context.Context, *TaskResult) (*ResultResponse, error)
 	GetJobStatus(context.Context, *JobStatusRequest) (*JobStatusReply, error)
@@ -129,12 +103,6 @@ type UnimplementedTangoServiceServer struct{}
 
 func (UnimplementedTangoServiceServer) SubmitTask(context.Context, *TaskRequest) (*TaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTask not implemented")
-}
-func (UnimplementedTangoServiceServer) RegisterDevice(context.Context, *DeviceInfo) (*DeviceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterDevice not implemented")
-}
-func (UnimplementedTangoServiceServer) UpdateDeviceStatus(context.Context, *DeviceStatus) (*DeviceStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeviceStatus not implemented")
 }
 func (UnimplementedTangoServiceServer) FetchTask(context.Context, *DeviceRequest) (*TaskAssignment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchTask not implemented")
@@ -180,42 +148,6 @@ func _TangoService_SubmitTask_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TangoServiceServer).SubmitTask(ctx, req.(*TaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TangoService_RegisterDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeviceInfo)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TangoServiceServer).RegisterDevice(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TangoService_RegisterDevice_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TangoServiceServer).RegisterDevice(ctx, req.(*DeviceInfo))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TangoService_UpdateDeviceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeviceStatus)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TangoServiceServer).UpdateDeviceStatus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TangoService_UpdateDeviceStatus_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TangoServiceServer).UpdateDeviceStatus(ctx, req.(*DeviceStatus))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -284,14 +216,6 @@ var TangoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SubmitTask",
 			Handler:    _TangoService_SubmitTask_Handler,
-		},
-		{
-			MethodName: "RegisterDevice",
-			Handler:    _TangoService_RegisterDevice_Handler,
-		},
-		{
-			MethodName: "UpdateDeviceStatus",
-			Handler:    _TangoService_UpdateDeviceStatus_Handler,
 		},
 		{
 			MethodName: "FetchTask",

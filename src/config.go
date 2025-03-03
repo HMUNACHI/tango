@@ -10,7 +10,8 @@ type ServerConfig struct {
 }
 
 type TokensConfig struct {
-	Approved []string `mapstructure:"approved"`
+	JWTSecret string `mapstructure:"JWTSecret"`
+	TestToken string `mapstructure:"testToken"`
 }
 
 type TaskConfig struct {

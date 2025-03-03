@@ -12,6 +12,11 @@ import (
 )
 
 func main() {
+	// Setup GCP for credentials.
+	if err := tango.SetupGCP(); err != nil {
+		log.Fatalf("failed to setup GCP: %v", err)
+	}
+
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

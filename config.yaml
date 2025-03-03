@@ -3,9 +3,7 @@ server:
   port: 50051
 
 tokens:
-  approved:
-    - test4956
-    - test8632
+  testToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NDA5NDcyMzgsImlzc3VlciI6IkNhY3R1cyBFZGdlIn0.bfq0u8921So9E9ra8Qdh6nGph0XaRCyMHZaDEDn3cu8" 
 
 task:
   timeout_seconds: 1
