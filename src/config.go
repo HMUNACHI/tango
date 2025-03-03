@@ -10,7 +10,6 @@ type ServerConfig struct {
 }
 
 type TokensConfig struct {
-	JWTSecret string `mapstructure:"JWTSecret"`
 	TestToken string `mapstructure:"testToken"`
 }
 

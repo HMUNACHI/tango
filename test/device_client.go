@@ -59,7 +59,11 @@ func main() {
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		md := metadata.New(map[string]string{"cactus-token": tango.AppConfig.Tokens.TestToken})
+		token, err := tango.GetTestToken()
+		if err != nil {
+			log.Fatalf("failed to get test token: %v", err)
+		}
+		md := metadata.New(map[string]string{"cactus-token": token})
 		ctx = metadata.NewOutgoingContext(ctx, md)
 		req := &pb.DeviceRequest{DeviceId: "device1"}
 

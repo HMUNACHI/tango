@@ -26,6 +26,9 @@ var (
 	cachedTangoJWTSecret string
 	cachedSecretErr      error
 	jwtSecretOnce        sync.Once
+	cachedTestToken      string
+	cachedTestTokenErr   error
+	testTokenOnce        sync.Once
 )
 
 func getTangoJWTSecret() (string, error) {
@@ -50,4 +53,31 @@ func getTangoJWTSecret() (string, error) {
 		cachedTangoJWTSecret = string(result.Payload.Data)
 	})
 	return cachedTangoJWTSecret, cachedSecretErr
+}
+
+func GetTestToken() (string, error) {
+	testTokenOnce.Do(func() {
+		if err := SetupGCP(); err != nil {
+			cachedTestTokenErr = fmt.Errorf("failed to setup GCP: %v", err)
+			return
+		}
+		ctx := context.Background()
+		client, err := secretmanager.NewClient(ctx)
+		if err != nil {
+			cachedTestTokenErr = fmt.Errorf("failed to create secret manager client: %v", err)
+			return
+		}
+		defer client.Close()
+		secretName := AppConfig.GCP.TestTokenSecretName
+		req := &secretmanagerpb.AccessSecretVersionRequest{
+			Name: secretName,
+		}
+		result, err := client.AccessSecretVersion(ctx, req)
+		if err != nil {
+			cachedTestTokenErr = fmt.Errorf("failed to access secret version: %v", err)
+			return
+		}
+		cachedTestToken = string(result.Payload.Data)
+	})
+	return cachedTestToken, cachedTestTokenErr
 }

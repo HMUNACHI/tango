@@ -86,11 +86,8 @@ func TokenInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 	if len(tokens) == 0 {
 		return nil, errors.New("missing CACTUS_TOKEN")
 	}
-	JWTSecret, err := getTangoJWTSecret()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get JWT secret: %v", err)
-	}
-	_, err = ValidateJWT(tokens[0], JWTSecret)
+	JWTSecret, _ := getTangoJWTSecret()
+	_, err := ValidateJWT(tokens[0], JWTSecret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT: %v", err)
 	}

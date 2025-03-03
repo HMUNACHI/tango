@@ -2,8 +2,13 @@ server:
   host: "localhost"
   port: 50051
 
-tokens:
-  testToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NDA5NDcyMzgsImlzc3VlciI6IkNhY3R1cyBFZGdlIn0.bfq0u8921So9E9ra8Qdh6nGph0XaRCyMHZaDEDn3cu8" 
+gcp:
+  project_id: "cactus-v1"
+  location: "us-central1"
+  weight_bucket: "weights"
+  key_file: "cactus-gcp-credentials.json"
+  jwt_secret_name: "projects/263237337139/secrets/TangoJWTSecret/versions/latest"
+  test_token_secret_name: "projects/263237337139/secrets/TangoTestTokens/versions/1"
 
 task:
   timeout_seconds: 1

@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-	// Setup GCP for credentials.
 	if err := tango.SetupGCP(); err != nil {
 		log.Fatalf("failed to setup GCP: %v", err)
 	}
