@@ -10,7 +10,7 @@ type ServerConfig struct {
 }
 
 type TokensConfig struct {
-	TestToken string `mapstructure:"testToken"`
+	JWTSecret string `mapstructure:"JWTSecret"`
 }
 
 type TaskConfig struct {
@@ -23,11 +23,21 @@ type LoggingConfig struct {
 	File  string `mapstructure:"file"`
 }
 
+type GCPConfig struct {
+	ProjectID           string `mapstructure:"project_id"`
+	Location            string `mapstructure:"location"`
+	WeightBucket        string `mapstructure:"weight_bucket"`
+	KeyFile             string `mapstructure:"key_file"`
+	JWTSecretName       string `mapstructure:"jwt_secret_name"`
+	TestTokenSecretName string `mapstructure:"test_token_secret_name"`
+}
+
 type Config struct {
 	Server  ServerConfig  `mapstructure:"server"`
 	Tokens  TokensConfig  `mapstructure:"tokens"`
 	Task    TaskConfig    `mapstructure:"task"`
 	Logging LoggingConfig `mapstructure:"logging"`
+	GCP     GCPConfig     `mapstructure:"gcp"`
 }
 
 var AppConfig *Config
