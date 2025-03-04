@@ -3,6 +3,7 @@ package tango
 import (
 	pb "cactus/tango/src/protobuff"
 	"context"
+	"sync"
 )
 
 type Job struct {
@@ -24,6 +25,7 @@ type Job struct {
 	ScaleBytes      []byte
 	ScaleScalar     float32
 	PendingTasks    map[int]TimeDeadline
+	mu              sync.Mutex
 }
 
 type TimeDeadline struct {

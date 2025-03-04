@@ -6,16 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 )
 
 func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse, error) {
-	s.jobsMu.Lock()
-	defer s.jobsMu.Unlock()
-
-	totalTasks := int(req.RowSplits * req.ColSplits)
-	log.Printf("Received new job submission: %s expecting %d tasks (2D splitting)", req.JobId, totalTasks)
-
 	job := &Job{
 		ConsumerID:      req.ConsumerId,
 		JobID:           req.JobId,
@@ -25,7 +20,7 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 		m:               req.M,
 		n:               req.N,
 		d:               req.D,
-		ExpectedSplits:  totalTasks,
+		ExpectedSplits:  int(req.RowSplits * req.ColSplits),
 		RowSplits:       req.RowSplits,
 		ColSplits:       req.ColSplits,
 		AssignedSplits:  0,
@@ -39,9 +34,12 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 			return 0
 		}(),
 		PendingTasks: make(map[int]TimeDeadline),
+		mu:           sync.Mutex{},
 	}
+	s.jobsMu.Lock()
 	s.jobs[req.JobId] = job
 	s.jobQueue = append(s.jobQueue, req.JobId)
+	s.jobsMu.Unlock()
 
 	return &pb.TaskResponse{
 		Accepted: true,
@@ -50,16 +48,23 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 }
 
 func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.TaskAssignment, error) {
-	s.jobsMu.Lock()
-	defer s.jobsMu.Unlock()
-
 	log.Printf("Device %s requesting a task", req.DeviceId)
 	now := time.Now().UnixNano()
-	for _, jobID := range s.jobQueue {
+
+	s.jobsMu.RLock()
+	jobIDs := make([]string, len(s.jobQueue))
+	copy(jobIDs, s.jobQueue)
+	s.jobsMu.RUnlock()
+
+	for _, jobID := range jobIDs {
+		s.jobsMu.RLock()
 		job, exists := s.jobs[jobID]
+		s.jobsMu.RUnlock()
 		if !exists {
 			continue
 		}
+
+		job.mu.Lock()
 		gridRows := int(job.RowSplits)
 		gridCols := int(job.ColSplits)
 		var taskIndex int
@@ -81,68 +86,73 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 				break
 			}
 		}
-		if found {
-			rowBlock := (taskIndex - 1) / gridCols
-			colBlock := (taskIndex - 1) % gridCols
 
-			var fullA, fullB [][]float32
-			if err := json.Unmarshal(job.AData, &fullA); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal AData: %w", err)
-			}
-			if err := json.Unmarshal(job.BData, &fullB); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal BData: %w", err)
-			}
-
-			totalRows := len(fullA)
-			rowsPerBlock := totalRows / gridRows
-			extraRows := totalRows % gridRows
-			startRow := rowBlock*rowsPerBlock + min(rowBlock, extraRows)
-			endRow := startRow + rowsPerBlock
-			if rowBlock < extraRows {
-				endRow++
-			}
-			shardA := fullA[startRow:endRow]
-
-			totalCols := len(fullB[0])
-			colsPerBlock := totalCols / gridCols
-			extraCols := totalCols % gridCols
-			startCol := colBlock*colsPerBlock + min(colBlock, extraCols)
-			endCol := startCol + colsPerBlock
-			if colBlock < extraCols {
-				endCol++
-			}
-			shardB := make([][]float32, len(fullB))
-			for i := range fullB {
-				shardB[i] = fullB[i][startCol:endCol]
-			}
-
-			shardABytes, err := json.Marshal(shardA)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal shardA: %w", err)
-			}
-			shardBBytes, err := json.Marshal(shardB)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal shardB: %w", err)
-			}
-
-			taskID := fmt.Sprintf("%s_%d", job.JobID, taskIndex)
-			log.Printf("Assigning task %s (rowBlock=%d, colBlock=%d of job %s) to device %s",
-				taskID, rowBlock, colBlock, job.JobID, req.DeviceId)
-
-			assignment := &pb.TaskAssignment{
-				JobId:       job.JobID,
-				TaskId:      taskID,
-				Operation:   job.Operation,
-				AData:       shardABytes,
-				BData:       shardBBytes,
-				M:           int32(rowBlock),
-				N:           int32(colBlock),
-				D:           int32(gridRows),
-				ScaleBytes:  job.ScaleBytes,
-				ScaleScalar: &job.ScaleScalar,
-			}
-			return assignment, nil
+		if !found {
+			job.mu.Unlock()
+			continue
 		}
+
+		job.mu.Unlock()
+		var fullA, fullB [][]float32
+		if err := json.Unmarshal(job.AData, &fullA); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal AData: %w", err)
+		}
+		if err := json.Unmarshal(job.BData, &fullB); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal BData: %w", err)
+		}
+
+		rowBlock := (taskIndex - 1) / gridCols
+		colBlock := (taskIndex - 1) % gridCols
+
+		totalRows := len(fullA)
+		rowsPerBlock := totalRows / gridRows
+		extraRows := totalRows % gridRows
+		startRow := rowBlock*rowsPerBlock + min(rowBlock, extraRows)
+		endRow := startRow + rowsPerBlock
+		if rowBlock < extraRows {
+			endRow++
+		}
+		shardA := fullA[startRow:endRow]
+
+		totalCols := len(fullB[0])
+		colsPerBlock := totalCols / gridCols
+		extraCols := totalCols % gridCols
+		startCol := colBlock*colsPerBlock + min(colBlock, extraCols)
+		endCol := startCol + colsPerBlock
+		if colBlock < extraCols {
+			endCol++
+		}
+		shardB := make([][]float32, len(fullB))
+		for i := range fullB {
+			shardB[i] = fullB[i][startCol:endCol]
+		}
+
+		shardABytes, err := json.Marshal(shardA)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal shardA: %w", err)
+		}
+		shardBBytes, err := json.Marshal(shardB)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal shardB: %w", err)
+		}
+
+		taskID := fmt.Sprintf("%s_%d", job.JobID, taskIndex)
+		log.Printf("Assigning task %s (rowBlock=%d, colBlock=%d of job %s) to device %s",
+			taskID, rowBlock, colBlock, job.JobID, req.DeviceId)
+
+		assignment := &pb.TaskAssignment{
+			JobId:       job.JobID,
+			TaskId:      taskID,
+			Operation:   job.Operation,
+			AData:       shardABytes,
+			BData:       shardBBytes,
+			M:           int32(rowBlock),
+			N:           int32(colBlock),
+			D:           int32(gridRows),
+			ScaleBytes:  job.ScaleBytes,
+			ScaleScalar: &job.ScaleScalar,
+		}
+		return assignment, nil
 	}
 	return nil, fmt.Errorf("no available tasks")
 }

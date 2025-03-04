@@ -8,7 +8,7 @@ import (
 
 type server struct {
 	pb.UnimplementedTangoServiceServer
-	jobsMu   sync.Mutex
+	jobsMu   sync.RWMutex
 	jobs     map[string]*Job
 	jobQueue []string
 }

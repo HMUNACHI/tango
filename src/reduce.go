@@ -10,16 +10,19 @@ import (
 )
 
 func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.ResultResponse, error) {
-	s.jobsMu.Lock()
-	defer s.jobsMu.Unlock()
-
+	// Use global read lock to get the job pointer.
+	s.jobsMu.RLock()
 	job, exists := s.jobs[res.JobId]
+	s.jobsMu.RUnlock()
 	if !exists {
 		return &pb.ResultResponse{
 			Success: false,
 			Message: "Job not found.",
 		}, nil
 	}
+	// Lock the individual job.
+	job.mu.Lock()
+	defer job.mu.Unlock()
 
 	shardIndex, err := extractShardIndex(res.TaskId)
 	if err != nil {
@@ -34,11 +37,8 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 	}
 
 	delete(job.PendingTasks, shardIndex)
-
 	job.Results[shardIndex] = []byte(res.ResultData)
-
 	job.ReceivedUpdates++
-
 	if job.ReceivedUpdates == job.ExpectedSplits {
 		finalResult, err := reassembleCShards(job.Results, int(job.ColSplits))
 		if err != nil {
@@ -47,7 +47,6 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 			job.FinalResult = finalResult
 		}
 	}
-
 	return &pb.ResultResponse{
 		Success: true,
 		Message: "Result received and processed.",
