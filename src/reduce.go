@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -41,7 +40,7 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 	job.ReceivedUpdates++
 
 	if job.ReceivedUpdates == job.ExpectedSplits {
-		finalResult, err := reassembleCShards(job.Results)
+		finalResult, err := reassembleCShards(job.Results, int(job.ColSplits))
 		if err != nil {
 			log.Printf("Job %s complete, but failed to reassemble C_shards: %v", job.JobID, err)
 		} else {
@@ -63,23 +62,40 @@ func extractShardIndex(taskId string) (int, error) {
 	return strconv.Atoi(parts[1])
 }
 
-func reassembleCShards(results map[int][]byte) ([]byte, error) {
-	var keys []int
-	for k := range results {
-		keys = append(keys, k)
+func reassembleCShards(results map[int][]byte, gridCols int) ([]byte, error) {
+	total := len(results)
+	if total == 0 {
+		return nil, fmt.Errorf("no shard results")
 	}
-	sort.Ints(keys)
+	gridRows := total / gridCols
 
-	var allLines []string
-	for _, k := range keys {
-		shardStr := string(results[k])
-		lines := strings.Split(shardStr, "\n")
-		for _, line := range lines {
-			if strings.TrimSpace(line) != "" {
-				allLines = append(allLines, line)
+	shards := make([][]([]string), gridRows)
+	for i := range shards {
+		shards[i] = make([][]string, gridCols)
+	}
+
+	for key, data := range results {
+		rowBlock := (key - 1) / gridCols
+		colBlock := (key - 1) % gridCols
+		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+		shards[rowBlock][colBlock] = lines
+	}
+
+	var fullRows []string
+	for r := 0; r < gridRows; r++ {
+		if len(shards[r]) == 0 || len(shards[r][0]) == 0 {
+			return nil, fmt.Errorf("empty shard in row block %d", r)
+		}
+		blockRows := len(shards[r][0])
+		for i := 0; i < blockRows; i++ {
+			var rowParts []string
+			for c := 0; c < gridCols; c++ {
+				rowParts = append(rowParts, strings.TrimSpace(shards[r][c][i]))
 			}
+			fullRows = append(fullRows, strings.Join(rowParts, " "))
 		}
 	}
-	finalResult := strings.Join(allLines, "\n")
+	finalResult := strings.Join(fullRows, "\n")
+	finalResult = strings.TrimSpace(finalResult)
 	return []byte(finalResult), nil
 }

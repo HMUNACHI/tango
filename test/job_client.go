@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	tango "cactus/tango/src"
@@ -57,6 +58,28 @@ func generateMatrix(rows, cols int, factor float32) [][]float32 {
 
 func newFloat32(val float32) *float32 {
 	return &val
+}
+
+func parseMatrix(s string) ([][]float32, error) {
+	var result [][]float32
+	rows := strings.Split(strings.TrimSpace(s), "\n")
+	for _, row := range rows {
+		if strings.TrimSpace(row) == "" {
+			continue
+		}
+		fields := strings.Fields(row)
+		var numericRow []float32
+		for _, valStr := range fields {
+			var v float32
+			_, err := fmt.Sscanf(valStr, "%f", &v)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse value %q: %v", valStr, err)
+			}
+			numericRow = append(numericRow, v)
+		}
+		result = append(result, numericRow)
+	}
+	return result, nil
 }
 
 func main() {
@@ -122,11 +145,39 @@ func main() {
 		if status.IsComplete {
 			log.Printf("Job %s complete, final result:\n%s", jobID, string(status.FinalResult))
 			expectedMatrix := multiplyFull(aMatrix, bMatrix, 1.0)
-			expectedStr := matrixToString(expectedMatrix)
-			if expectedStr == string(status.FinalResult) {
-				log.Printf("Verification passed: final result matches expected matrix.")
+			finalMatrix, err := parseMatrix(string(status.FinalResult))
+			if err != nil {
+				log.Printf("Failed to parse final result matrix: %v", err)
 			} else {
-				log.Printf("Verification failed:\nExpected:\n%s\nBut got:\n%s", expectedStr, string(status.FinalResult))
+				// Compare expectedMatrix and finalMatrix element-wise with tolerance.
+				if len(expectedMatrix) != len(finalMatrix) {
+					log.Printf("Verification failed: expected %d rows, got %d", len(expectedMatrix), len(finalMatrix))
+				} else {
+					tolerance := float32(0.001)
+					pass := true
+					for i, expRow := range expectedMatrix {
+						if len(expRow) != len(finalMatrix[i]) {
+							log.Printf("Verification failed: row %d column count mismatch", i)
+							pass = false
+							break
+						}
+						for j, expVal := range expRow {
+							diff := expVal - finalMatrix[i][j]
+							if diff < 0 {
+								diff = -diff
+							}
+							if diff > tolerance {
+								log.Printf("Mismatch at [%d][%d]: expected %.2f, got %.2f", i, j, expVal, finalMatrix[i][j])
+								pass = false
+							}
+						}
+					}
+					if pass {
+						log.Printf("Verification passed: final result matches expected matrix.")
+					} else {
+						log.Printf("Verification failed: matrices differ.")
+					}
+				}
 			}
 			break
 		}
