@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -9,9 +10,50 @@ import (
 	tango "cactus/tango/src"
 	pb "cactus/tango/src/protobuff"
 
+	"golang.org/x/exp/rand"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
+
+func matrixToString(mat [][]float32) string {
+	s := ""
+	for _, row := range mat {
+		for _, v := range row {
+			s += fmt.Sprintf("%.2f ", v)
+		}
+		s += "\n"
+	}
+	return s
+}
+
+func multiplyFull(A, B [][]float32, scale float32) [][]float32 {
+	m := len(A)
+	d := len(B)
+	n := len(B[0])
+	C := make([][]float32, m)
+	for i := 0; i < m; i++ {
+		C[i] = make([]float32, n)
+		for j := 0; j < n; j++ {
+			var sum float32
+			for k := 0; k < d; k++ {
+				sum += A[i][k] * B[k][j]
+			}
+			C[i][j] = sum * scale
+		}
+	}
+	return C
+}
+
+func generateMatrix(rows, cols int, factor float32) [][]float32 {
+	m := make([][]float32, rows)
+	for i := 0; i < rows; i++ {
+		m[i] = make([]float32, cols)
+		for j := 0; j < cols; j++ {
+			m[i][j] = factor * float32(i*cols+j+1)
+		}
+	}
+	return m
+}
 
 func newFloat32(val float32) *float32 {
 	return &val
@@ -32,27 +74,62 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get test token: %v", err)
 	}
+
 	md := metadata.New(map[string]string{"cactus-token": token})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	numTasks := 10
-	for i := 1; i <= numTasks; i++ {
-		jobID := fmt.Sprintf("job%d", i)
-		jobReq := &pb.TaskRequest{
-			JobId:       jobID,
-			Operation:   "scaled_matmul",
-			AData:       []byte(fmt.Sprintf("AData_for_%s", jobID)),
-			BData:       []byte(fmt.Sprintf("BData_for_%s", jobID)),
-			NumSplits:   2,
-			M:           4,
-			N:           4,
-			D:           4,
-			ScaleScalar: newFloat32(1.0),
-		}
-		res, err := client.SubmitTask(ctx, jobReq)
+	rand.Seed(uint64(time.Now().UnixNano()))
+	taskID := rand.Intn(10000)
+	jobID := fmt.Sprintf("Job%d", taskID)
+
+	aMatrix := generateMatrix(16, 8, 0.1)
+	bMatrix := generateMatrix(8, 16, 0.1)
+
+	aBytes, err := json.Marshal(aMatrix)
+	if err != nil {
+		log.Fatalf("failed to marshal A matrix: %v", err)
+	}
+
+	bBytes, err := json.Marshal(bMatrix)
+	if err != nil {
+		log.Fatalf("failed to marshal B matrix: %v", err)
+	}
+
+	jobReq := &pb.TaskRequest{
+		ConsumerId:  "234s5c2",
+		JobId:       jobID,
+		Operation:   "scaled_matmul",
+		AData:       aBytes,
+		BData:       bBytes,
+		NumSplits:   8,
+		M:           16,
+		N:           16,
+		D:           8,
+		ScaleScalar: newFloat32(1.0),
+	}
+	res, err := client.SubmitTask(ctx, jobReq)
+	if err != nil {
+		log.Fatalf("SubmitTask for %s failed: %v", jobID, err)
+	}
+	log.Printf("SubmitTask response for %s: %s", jobID, res.Message)
+
+	for {
+		status, err := client.GetJobStatus(ctx, &pb.JobStatusRequest{JobId: jobID})
 		if err != nil {
-			log.Fatalf("SubmitTask for %s failed: %v", jobID, err)
+			log.Fatalf("GetJobStatus failed: %v", err)
 		}
-		log.Printf("SubmitTask response for %s: %s", jobID, res.Message)
+		if status.IsComplete {
+			log.Printf("Job %s complete, final result:\n%s", jobID, string(status.FinalResult))
+			expectedMatrix := multiplyFull(aMatrix, bMatrix, 1.0)
+			expectedStr := matrixToString(expectedMatrix)
+			if expectedStr == string(status.FinalResult) {
+				log.Printf("Verification passed: final result matches expected matrix.")
+			} else {
+				log.Printf("Verification failed:\nExpected:\n%s\nBut got:\n%s", expectedStr, string(status.FinalResult))
+			}
+			break
+		}
+		log.Printf("Job %s still in progress...", jobID)
+		time.Sleep(2 * time.Second)
 	}
 }

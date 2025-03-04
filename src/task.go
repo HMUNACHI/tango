@@ -3,8 +3,10 @@ package tango
 import (
 	pb "cactus/tango/src/protobuff"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"time"
 )
 
@@ -12,9 +14,12 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 	s.jobsMu.Lock()
 	defer s.jobsMu.Unlock()
 
-	log.Printf("Received new job submission: %s expecting %d splits", req.JobId, req.NumSplits)
+	// For full 2D splitting, ExpectedSplits becomes (num_splits)^2.
+	totalTasks := int(req.NumSplits * req.NumSplits)
+	log.Printf("Received new job submission: %s expecting %d tasks (2D splitting)", req.JobId, totalTasks)
 
 	job := &Job{
+		ConsumerID:      req.ConsumerId,
 		JobID:           req.JobId,
 		Operation:       req.Operation,
 		AData:           req.AData,
@@ -22,7 +27,7 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 		m:               req.M,
 		n:               req.N,
 		d:               req.D,
-		ExpectedSplits:  int(req.NumSplits),
+		ExpectedSplits:  totalTasks, // update here
 		AssignedSplits:  0,
 		ReceivedUpdates: 0,
 		Results:         make(map[int][]byte),
@@ -30,9 +35,8 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 		ScaleScalar: func() float32 {
 			if req.ScaleScalar != nil {
 				return *req.ScaleScalar
-			} else {
-				return 0
 			}
+			return 0
 		}(),
 		PendingTasks: make(map[int]TimeDeadline),
 	}
@@ -49,27 +53,27 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 	s.jobsMu.Lock()
 	defer s.jobsMu.Unlock()
 
-	if !isAllowedDevice(req.DeviceId) {
-		return nil, fmt.Errorf("device %s not allowed", req.DeviceId)
-	}
-
 	log.Printf("Device %s requesting a task", req.DeviceId)
 	now := time.Now().UnixNano()
+	var gridSize int
 	for _, jobID := range s.jobQueue {
 		job, exists := s.jobs[jobID]
 		if !exists {
 			continue
 		}
-		var shardIndex int
+		// Set gridSize = sqrt(ExpectedSplits). (Assume perfect square.)
+		gridSize = int(math.Sqrt(float64(job.ExpectedSplits)))
+		var taskIndex int
 		found := false
-		for i := 1; i <= job.ExpectedSplits; i++ {
-			if _, done := job.Results[i]; done {
+		// Iterate over all task indices from 1 to ExpectedSplits.
+		for idx := 1; idx <= job.ExpectedSplits; idx++ {
+			if _, done := job.Results[idx]; done {
 				continue
 			}
-			if td, pending := job.PendingTasks[i]; !pending || now > td.Deadline {
-				shardIndex = i
+			if td, pending := job.PendingTasks[idx]; !pending || now > td.Deadline {
+				taskIndex = idx
 				found = true
-				job.PendingTasks[i] = TimeDeadline{
+				job.PendingTasks[idx] = TimeDeadline{
 					Deadline: time.Now().Add(time.Second).UnixNano(),
 					DeviceID: req.DeviceId,
 				}
@@ -80,15 +84,65 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 			}
 		}
 		if found {
-			taskID := fmt.Sprintf("%s_%d", job.JobID, shardIndex)
-			log.Printf("Assigning task %s (shard %d of job %s) to device %s",
-				taskID, shardIndex, job.JobID, req.DeviceId)
+			// Determine block coordinates.
+			rowBlock := (taskIndex - 1) / gridSize
+			colBlock := (taskIndex - 1) % gridSize
+
+			// Partition A (split by rows) and B (split by columns).
+			var fullA, fullB [][]float32
+			if err := json.Unmarshal(job.AData, &fullA); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal AData: %w", err)
+			}
+			if err := json.Unmarshal(job.BData, &fullB); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal BData: %w", err)
+			}
+
+			// Compute row boundaries for A.
+			totalRows := len(fullA)
+			rowsPerBlock := totalRows / gridSize
+			extraRows := totalRows % gridSize
+			startRow := rowBlock*rowsPerBlock + min(rowBlock, extraRows)
+			endRow := startRow + rowsPerBlock
+			if rowBlock < extraRows {
+				endRow++
+			}
+			shardA := fullA[startRow:endRow]
+
+			// Compute column boundaries for B.
+			totalCols := len(fullB[0])
+			colsPerBlock := totalCols / gridSize
+			extraCols := totalCols % gridSize
+			startCol := colBlock*colsPerBlock + min(colBlock, extraCols)
+			endCol := startCol + colsPerBlock
+			if colBlock < extraCols {
+				endCol++
+			}
+			// For each row in B, take the slice.
+			shardB := make([][]float32, len(fullB))
+			for i := range fullB {
+				shardB[i] = fullB[i][startCol:endCol]
+			}
+
+			shardABytes, err := json.Marshal(shardA)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal shardA: %w", err)
+			}
+			shardBBytes, err := json.Marshal(shardB)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal shardB: %w", err)
+			}
+
+			taskID := fmt.Sprintf("%s_%d", job.JobID, taskIndex)
+			log.Printf("Assigning task %s (rowBlock=%d, colBlock=%d of job %s) to device %s",
+				taskID, rowBlock, colBlock, job.JobID, req.DeviceId)
+
 			assignment := &pb.TaskAssignment{
-				JobId:       job.JobID,
-				TaskId:      taskID,
-				Operation:   job.Operation,
-				AData:       job.AData,
-				BData:       job.BData,
+				JobId:     job.JobID,
+				TaskId:    taskID,
+				Operation: job.Operation,
+				AData:     shardABytes,
+				BData:     shardBBytes,
+				// Pass original dimensions as needed.
 				M:           job.m,
 				N:           job.n,
 				D:           job.d,
@@ -100,4 +154,12 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 		}
 	}
 	return nil, fmt.Errorf("no available tasks at this time")
+}
+
+// Helper: minimal function for min.
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

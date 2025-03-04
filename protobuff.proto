@@ -12,17 +12,18 @@ service TangoService {
 }
 
 message TaskRequest {
-  string job_id = 1;
-  string operation = 2;   
-  bytes a_data = 3;   
-  bytes b_data = 4;  
-  optional bytes w_data = 5;
-  optional bytes scale_bytes = 6; 
-  optional float scale_scalar = 7; 
-  int32 num_splits = 8;
-  int32 m = 9;
-  int32 n = 10;
-  int32 d = 11;
+  string consumer_id = 1;
+  string job_id = 2;
+  string operation = 3;   
+  bytes a_data = 4;   
+  bytes b_data = 5;  
+  optional bytes w_data = 6;
+  optional bytes scale_bytes = 7; 
+  optional float scale_scalar = 8; 
+  int32 num_splits = 9;
+  int32 m = 10;
+  int32 n = 11;
+  int32 d = 12;
 }
 
 message TaskResponse {
@@ -54,6 +55,7 @@ message TaskResult {
   string job_id = 2;
   string task_id = 3;
   bytes result_data = 4; 
+  int32 num_elements = 5;
 }
 
 message ResultResponse {

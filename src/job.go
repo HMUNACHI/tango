@@ -6,6 +6,7 @@ import (
 )
 
 type Job struct {
+	ConsumerID      string
 	JobID           string
 	Operation       string
 	AData           []byte

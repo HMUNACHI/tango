@@ -46,6 +46,9 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 			log.Printf("Job %s complete, but failed to reassemble C_shards: %v", job.JobID, err)
 		} else {
 			job.FinalResult = finalResult
+			if err := AppendRecord(res.DeviceId, job.ConsumerID, res.NumElements); err != nil {
+				log.Printf("Failed to write record for job %s: %v", job.JobID, err)
+			}
 		}
 	}
 
@@ -63,6 +66,8 @@ func extractShardIndex(taskId string) (int, error) {
 	return strconv.Atoi(parts[1])
 }
 
+// Updated reassembleCShards to vertically concatenate shards.
+// It assumes each shard result is a multi-line string representing a 4x16 block.
 func reassembleCShards(results map[int][]byte) ([]byte, error) {
 	var keys []int
 	for k := range results {
@@ -70,9 +75,16 @@ func reassembleCShards(results map[int][]byte) ([]byte, error) {
 	}
 	sort.Ints(keys)
 
-	var finalResult []byte
+	var allLines []string
 	for _, k := range keys {
-		finalResult = append(finalResult, results[k]...)
+		shardStr := string(results[k])
+		lines := strings.Split(shardStr, "\n")
+		for _, line := range lines {
+			if strings.TrimSpace(line) != "" {
+				allLines = append(allLines, line)
+			}
+		}
 	}
-	return finalResult, nil
+	finalResult := strings.Join(allLines, "\n")
+	return []byte(finalResult), nil
 }
