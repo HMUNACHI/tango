@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func AppendRecord(deviceID string, consumerID string, numElements int32) error {
+func AppendRecord(deviceID string, consumerID string, flops int32) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -19,7 +19,7 @@ func AppendRecord(deviceID string, consumerID string, numElements int32) error {
 	}
 	defer f.Close()
 
-	record := fmt.Sprintf("%s,%s,%d\n", deviceID, consumerID, numElements)
+	record := fmt.Sprintf("%s,%s,%d\n", deviceID, consumerID, flops)
 	_, err = f.WriteString(record)
 	return err
 }

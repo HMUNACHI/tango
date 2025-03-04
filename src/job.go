@@ -15,6 +15,8 @@ type Job struct {
 	n               int32
 	d               int32
 	ExpectedSplits  int
+	RowSplits       int32
+	ColSplits       int32
 	AssignedSplits  int
 	ReceivedUpdates int
 	Results         map[int][]byte

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"time"
 )
 
@@ -14,8 +13,7 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 	s.jobsMu.Lock()
 	defer s.jobsMu.Unlock()
 
-	// For full 2D splitting, ExpectedSplits becomes (num_splits)^2.
-	totalTasks := int(req.NumSplits * req.NumSplits)
+	totalTasks := int(req.RowSplits * req.ColSplits)
 	log.Printf("Received new job submission: %s expecting %d tasks (2D splitting)", req.JobId, totalTasks)
 
 	job := &Job{
@@ -27,7 +25,9 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 		m:               req.M,
 		n:               req.N,
 		d:               req.D,
-		ExpectedSplits:  totalTasks, // update here
+		ExpectedSplits:  totalTasks,
+		RowSplits:       req.RowSplits,
+		ColSplits:       req.ColSplits,
 		AssignedSplits:  0,
 		ReceivedUpdates: 0,
 		Results:         make(map[int][]byte),
@@ -55,17 +55,15 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 
 	log.Printf("Device %s requesting a task", req.DeviceId)
 	now := time.Now().UnixNano()
-	var gridSize int
 	for _, jobID := range s.jobQueue {
 		job, exists := s.jobs[jobID]
 		if !exists {
 			continue
 		}
-		// Set gridSize = sqrt(ExpectedSplits). (Assume perfect square.)
-		gridSize = int(math.Sqrt(float64(job.ExpectedSplits)))
+		gridRows := int(job.RowSplits)
+		gridCols := int(job.ColSplits)
 		var taskIndex int
 		found := false
-		// Iterate over all task indices from 1 to ExpectedSplits.
 		for idx := 1; idx <= job.ExpectedSplits; idx++ {
 			if _, done := job.Results[idx]; done {
 				continue
@@ -84,11 +82,9 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 			}
 		}
 		if found {
-			// Determine block coordinates.
-			rowBlock := (taskIndex - 1) / gridSize
-			colBlock := (taskIndex - 1) % gridSize
+			rowBlock := (taskIndex - 1) / gridCols
+			colBlock := (taskIndex - 1) % gridCols
 
-			// Partition A (split by rows) and B (split by columns).
 			var fullA, fullB [][]float32
 			if err := json.Unmarshal(job.AData, &fullA); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal AData: %w", err)
@@ -97,10 +93,9 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 				return nil, fmt.Errorf("failed to unmarshal BData: %w", err)
 			}
 
-			// Compute row boundaries for A.
 			totalRows := len(fullA)
-			rowsPerBlock := totalRows / gridSize
-			extraRows := totalRows % gridSize
+			rowsPerBlock := totalRows / gridRows
+			extraRows := totalRows % gridRows
 			startRow := rowBlock*rowsPerBlock + min(rowBlock, extraRows)
 			endRow := startRow + rowsPerBlock
 			if rowBlock < extraRows {
@@ -108,16 +103,14 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 			}
 			shardA := fullA[startRow:endRow]
 
-			// Compute column boundaries for B.
 			totalCols := len(fullB[0])
-			colsPerBlock := totalCols / gridSize
-			extraCols := totalCols % gridSize
+			colsPerBlock := totalCols / gridCols
+			extraCols := totalCols % gridCols
 			startCol := colBlock*colsPerBlock + min(colBlock, extraCols)
 			endCol := startCol + colsPerBlock
 			if colBlock < extraCols {
 				endCol++
 			}
-			// For each row in B, take the slice.
 			shardB := make([][]float32, len(fullB))
 			for i := range fullB {
 				shardB[i] = fullB[i][startCol:endCol]
@@ -137,26 +130,23 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 				taskID, rowBlock, colBlock, job.JobID, req.DeviceId)
 
 			assignment := &pb.TaskAssignment{
-				JobId:     job.JobID,
-				TaskId:    taskID,
-				Operation: job.Operation,
-				AData:     shardABytes,
-				BData:     shardBBytes,
-				// Pass original dimensions as needed.
-				M:           job.m,
-				N:           job.n,
-				D:           job.d,
-				NumSplits:   int32(job.ExpectedSplits),
+				JobId:       job.JobID,
+				TaskId:      taskID,
+				Operation:   job.Operation,
+				AData:       shardABytes,
+				BData:       shardBBytes,
+				M:           int32(rowBlock),
+				N:           int32(colBlock),
+				D:           int32(gridRows),
 				ScaleBytes:  job.ScaleBytes,
 				ScaleScalar: &job.ScaleScalar,
 			}
 			return assignment, nil
 		}
 	}
-	return nil, fmt.Errorf("no available tasks at this time")
+	return nil, fmt.Errorf("no available tasks")
 }
 
-// Helper: minimal function for min.
 func min(a, b int) int {
 	if a < b {
 		return a

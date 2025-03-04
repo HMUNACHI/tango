@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	tango "cactus/tango/src"
@@ -49,72 +50,76 @@ func matrixToString(mat [][]float32) string {
 }
 
 func main() {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
-	}
-	defer conn.Close()
-	client := pb.NewTangoServiceClient(conn)
-
-	deviceID := "480q84f"
-
-	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		token, err := tango.GetTestToken()
-		if err != nil {
-			log.Fatalf("failed to get test token: %v", err)
-		}
-		md := metadata.New(map[string]string{"cactus-token": token})
-		ctx = metadata.NewOutgoingContext(ctx, md)
-		req := &pb.DeviceRequest{DeviceId: deviceID}
-
-		task, err := client.FetchTask(ctx, req)
-		if err != nil {
-			cancel()
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		log.Printf("Fetched task: JobId=%s TaskId=%s Operation=%s", task.JobId, task.TaskId, task.Operation)
-
-		var resultData []byte
-		if task.Operation == "scaled_matmul" {
-			var A, B [][]float32
-			if err := json.Unmarshal(task.AData, &A); err != nil {
-				log.Fatalf("failed to unmarshal AData: %v", err)
-			}
-			if err := json.Unmarshal(task.BData, &B); err != nil {
-				log.Fatalf("failed to unmarshal BData: %v", err)
-			}
-			scale := float32(1.0)
-			if task.ScaleScalar != nil {
-				scale = *task.ScaleScalar
-			}
-			C, err := multiplyMatrices(A, B, scale)
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func(deviceID string) {
+			defer wg.Done()
+			conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 			if err != nil {
-				log.Fatalf("matrix multiplication error: %v", err)
+				log.Fatalf("Device %s: failed to connect: %v", deviceID, err)
 			}
-			resultData = []byte(matrixToString(C))
-			fmt.Println(string(resultData))
-		} else {
-			resultData = []byte("unsupported operation")
-		}
+			defer conn.Close()
+			client := pb.NewTangoServiceClient(conn)
+			for {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				token, err := tango.GetTestToken()
+				if err != nil {
+					log.Fatalf("Device %s: failed to get test token: %v", deviceID, err)
+				}
+				md := metadata.New(map[string]string{"cactus-token": token})
+				ctx = metadata.NewOutgoingContext(ctx, md)
+				req := &pb.DeviceRequest{DeviceId: deviceID}
 
-		taskRes := &pb.TaskResult{
-			DeviceId:    deviceID,
-			JobId:       task.JobId,
-			TaskId:      task.TaskId,
-			ResultData:  resultData,
-			NumElements: task.M * task.N,
-		}
-		report, err := client.ReportResult(ctx, taskRes)
-		if err != nil {
-			log.Printf("ReportResult failed: %v", err)
-			cancel()
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		log.Printf("ReportResult: %s", report.Message)
-		cancel()
-		time.Sleep(1 * time.Second)
+				task, err := client.FetchTask(ctx, req)
+				if err != nil {
+					cancel()
+					time.Sleep(2 * time.Second)
+					continue
+				}
+				log.Printf("Device %s fetched task: JobId=%s TaskId=%s Operation=%s", deviceID, task.JobId, task.TaskId, task.Operation)
+				var resultData []byte
+				if task.Operation == "scaled_matmul" {
+					var A, B [][]float32
+					if err := json.Unmarshal(task.AData, &A); err != nil {
+						log.Fatalf("Device %s: failed to unmarshal AData: %v", deviceID, err)
+					}
+					if err := json.Unmarshal(task.BData, &B); err != nil {
+						log.Fatalf("Device %s: failed to unmarshal BData: %v", deviceID, err)
+					}
+					scale := float32(1.0)
+					if task.ScaleScalar != nil {
+						scale = *task.ScaleScalar
+					}
+					C, err := multiplyMatrices(A, B, scale)
+					if err != nil {
+						log.Fatalf("Device %s: matrix multiplication error: %v", deviceID, err)
+					}
+					resultData = []byte(matrixToString(C))
+					fmt.Println(string(resultData))
+				} else {
+					resultData = []byte("unsupported operation")
+				}
+
+				taskRes := &pb.TaskResult{
+					DeviceId:   deviceID,
+					JobId:      task.JobId,
+					TaskId:     task.TaskId,
+					ResultData: resultData,
+					Flops:      2 * task.M * task.N * task.D,
+				}
+				report, err := client.ReportResult(ctx, taskRes)
+				if err != nil {
+					log.Printf("Device %s: ReportResult failed: %v", deviceID, err)
+					cancel()
+					time.Sleep(2 * time.Second)
+					continue
+				}
+				log.Printf("Device %s: ReportResult: %s", deviceID, report.Message)
+				cancel()
+				time.Sleep(1 * time.Second)
+			}
+		}(fmt.Sprintf("Device_%d", i))
 	}
+	wg.Wait()
 }
