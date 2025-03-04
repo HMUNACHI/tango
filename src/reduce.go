@@ -10,7 +10,6 @@ import (
 )
 
 func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.ResultResponse, error) {
-	// Use global read lock to get the job pointer.
 	s.jobsMu.RLock()
 	job, exists := s.jobs[res.JobId]
 	s.jobsMu.RUnlock()
@@ -20,12 +19,11 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 			Message: "Job not found.",
 		}, nil
 	}
-	// Lock the individual job.
 	job.mu.Lock()
-	defer job.mu.Unlock()
 
 	shardIndex, err := extractShardIndex(res.TaskId)
 	if err != nil {
+		job.mu.Unlock()
 		return &pb.ResultResponse{
 			Success: false,
 			Message: fmt.Sprintf("Invalid task id format: %v", err),
@@ -39,14 +37,31 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 	delete(job.PendingTasks, shardIndex)
 	job.Results[shardIndex] = []byte(res.ResultData)
 	job.ReceivedUpdates++
+
+	if res.Flops > 0 && len(res.ResultData) > 0 {
+		if err := AppendRecord(res.DeviceId, job.ConsumerID, res.Flops); err != nil {
+			log.Printf("Failed to append record for job %s: %v", job.JobID, err)
+		}
+	}
+
+	var completedJobID string
 	if job.ReceivedUpdates == job.ExpectedSplits {
 		finalResult, err := reassembleCShards(job.Results, int(job.ColSplits))
 		if err != nil {
 			log.Printf("Job %s complete, but failed to reassemble C_shards: %v", job.JobID, err)
 		} else {
 			job.FinalResult = finalResult
+			completedJobID = job.JobID
 		}
 	}
+	job.mu.Unlock()
+
+	if completedJobID != "" {
+		if err := UploadRecordsToGCS(completedJobID); err != nil {
+			log.Printf("Failed to upload records to GCS for job %s: %v", completedJobID, err)
+		}
+	}
+
 	return &pb.ResultResponse{
 		Success: true,
 		Message: "Result received and processed.",

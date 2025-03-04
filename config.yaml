@@ -5,7 +5,8 @@ server:
 gcp:
   project_id: "cactus-v1"
   location: "us-central1"
-  weight_bucket: "weights"
+  weight_bucket: "cactus-llm-weights"
+  records_bucket: "tango-records"
   key_file: "cactus-gcp-credentials.json"
   jwt_secret_name: "projects/263237337139/secrets/TangoJWTSecret/versions/latest"
   test_token_secret_name: "projects/263237337139/secrets/TangoTestTokens/versions/1"

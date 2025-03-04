@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 )
@@ -48,7 +47,6 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 }
 
 func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.TaskAssignment, error) {
-	log.Printf("Device %s requesting a task", req.DeviceId)
 	now := time.Now().UnixNano()
 
 	s.jobsMu.RLock()
@@ -137,8 +135,6 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 		}
 
 		taskID := fmt.Sprintf("%s_%d", job.JobID, taskIndex)
-		log.Printf("Assigning task %s (rowBlock=%d, colBlock=%d of job %s) to device %s",
-			taskID, rowBlock, colBlock, job.JobID, req.DeviceId)
 
 		assignment := &pb.TaskAssignment{
 			JobId:       job.JobID,

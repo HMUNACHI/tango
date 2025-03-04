@@ -32,9 +32,6 @@ func multiplyMatrices(A, B [][]float32, scale float32) ([][]float32, error) {
 			C[i][j] = sum * scale
 		}
 	}
-	fmt.Println("Matrix A:")
-	fmt.Println(matrixToString(A))
-	fmt.Println("Matrix B:")
 	return C, nil
 }
 
@@ -77,7 +74,6 @@ func main() {
 					time.Sleep(2 * time.Second)
 					continue
 				}
-				log.Printf("Device %s fetched task: JobId=%s TaskId=%s Operation=%s", deviceID, task.JobId, task.TaskId, task.Operation)
 				var resultData []byte
 				if task.Operation == "scaled_matmul" {
 					var A, B [][]float32
@@ -96,7 +92,6 @@ func main() {
 						log.Fatalf("Device %s: matrix multiplication error: %v", deviceID, err)
 					}
 					resultData = []byte(matrixToString(C))
-					fmt.Println(string(resultData))
 				} else {
 					resultData = []byte("unsupported operation")
 				}
@@ -115,11 +110,13 @@ func main() {
 					time.Sleep(2 * time.Second)
 					continue
 				}
-				log.Printf("Device %s: ReportResult: %s", deviceID, report.Message)
+				if !report.Success {
+					log.Printf("Device %s: ReportResult failed: %s", deviceID, report.Message)
+				}
 				cancel()
 				time.Sleep(1 * time.Second)
 			}
-		}(fmt.Sprintf("Device_%d", i))
+		}(fmt.Sprintf("TestDevice%d", i))
 	}
 	wg.Wait()
 }

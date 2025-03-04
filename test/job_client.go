@@ -135,7 +135,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("SubmitTask for %s failed: %v", jobID, err)
 	}
-	log.Printf("SubmitTask response for %s: %s", jobID, res.Message)
+	if !res.Accepted {
+		log.Fatalf("SubmitTask for %s rejected: %s", jobID, res.Message)
+	}
 
 	for {
 		status, err := client.GetJobStatus(ctx, &pb.JobStatusRequest{JobId: jobID})
@@ -143,13 +145,11 @@ func main() {
 			log.Fatalf("GetJobStatus failed: %v", err)
 		}
 		if status.IsComplete {
-			log.Printf("Job %s complete, final result:\n%s", jobID, string(status.FinalResult))
 			expectedMatrix := multiplyFull(aMatrix, bMatrix, 1.0)
 			finalMatrix, err := parseMatrix(string(status.FinalResult))
 			if err != nil {
 				log.Printf("Failed to parse final result matrix: %v", err)
 			} else {
-				// Compare expectedMatrix and finalMatrix element-wise with tolerance.
 				if len(expectedMatrix) != len(finalMatrix) {
 					log.Printf("Verification failed: expected %d rows, got %d", len(expectedMatrix), len(finalMatrix))
 				} else {
@@ -181,7 +181,6 @@ func main() {
 			}
 			break
 		}
-		log.Printf("Job %s still in progress...", jobID)
 		time.Sleep(2 * time.Second)
 	}
 }

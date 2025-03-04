@@ -27,6 +27,7 @@ type GCPConfig struct {
 	ProjectID           string `mapstructure:"project_id"`
 	Location            string `mapstructure:"location"`
 	WeightBucket        string `mapstructure:"weight_bucket"`
+	RecordsBucket       string `mapstructure:"records_bucket"`
 	KeyFile             string `mapstructure:"key_file"`
 	JWTSecretName       string `mapstructure:"jwt_secret_name"`
 	TestTokenSecretName string `mapstructure:"test_token_secret_name"`
