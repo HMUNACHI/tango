@@ -1,152 +1,80 @@
-# Cactus Tango
+<p align="center"><img src="images/tango.svg" alt="Go Routines"/>
+</p>
 
+Tango is Cactus' distributed computation platform designed to execute heavy matrix operations, such as scaled matrix multiplication by partitioning tasks across multiple devices. It leverages a microservices architecture built in Go, with secure gRPC communication (using TLS) and stateless JWT authentication. It uses Zstd for compressing each matrix down to 40-50% of its original size. The platform is optimized for scalability, operational efficiency, and seamless integration with GCP. You should have an authourized service account JSON to test this. The codebase establishis a flexible foundation to support future distributed compute tasks beyond matrix multiplication.
 
-## Table of Contents
+While C++ is renowned for its performance and control over system resources, it often comes with increased complexity in terms of memory management, concurrency handling, and overall development overhead. In contrast, Go offers a simplified and robust concurrency model with goroutines and channels that streamline parallel processing—a critical factor for a distributed computation platform like Tango. Go's garbage-collected runtime alleviates the need for manual memory management, reducing potential bugs and accelerating development. Go's ease of deployment through static binaries and strong standard library support for networking and microservices make it more suited for rapid development and scalable deployment compared to the intricate and often verbose nature of C++ programming.
 
-- [Overview](#overview)
-- [Core Purpose and Objectives](#core-purpose-and-objectives)
-- [System Architecture and Workflow](#system-architecture-and-workflow)
-- [Technical and Logical Flow](#technical-and-logical-flow)
-- [Design Decisions and Alternatives](#design-decisions-and-alternatives)
-- [Strengths, Limitations, and Risks](#strengths-limitations-and-risks)
-- [Business Value and Strategic Importance](#business-value-and-strategic-importance)
-- [Implementation Challenges and Mitigation Strategies](#implementation-challenges-and-mitigation-strategies)
-- [Key Performance Indicators (KPIs)](#key-performance-indicators-kpis)
-- [Long-Term Vision and Future Expansions](#long-term-vision-and-future-expansions)
-- [Project Setup and Deployment](#project-setup-and-deployment)
-  - [Install Packages](#install-packages)
-  - [Build Protobuf](#build-protobuf-only-when-changes-are-made-to-tangoprototype)
-  - [Running the Server Locally](#running-the-server-locally)
-  - [Deploying to GCP Compute Engine](#deploying-to-gcp-compute-engine)
-  - [Deploying on a Local Server](#deploying-on-a-local-server)
-- [Contributing](#contributing)
-- [License and Proprietary Notice](#license-and-proprietary-notice)
+Go's inherent concurrency model, based on goroutines and channels, is exceptionally well-suited for scaling to millions of concurrent communications and handling huge, frequently accessed task queues. Goroutines are lightweight compared to traditional OS threads, enabling the creation and management of millions of concurrent operations with minimal overhead (2kb). The Go runtime scheduler efficiently multiplexes these goroutines across available CPU cores, ensuring optimal resource utilization even under heavy loads. In the context of Tango, which requires handling high volumes of device communications and processing a large number of tasks concurrently, Go's non-blocking I/O and effective concurrency primitives facilitate rapid task distribution and response handling. Go's mature ecosystem, including high-performance networking libraries and support for gRPC, further enhances its ability to maintain low latency and high throughput. While achieving such scale necessitates careful system architecture—such as implementing efficient task queues, load balancing, and robust error handling—Go provides a solid foundation to build a resilient, scalable system capable of supporting millions of simultaneous connections and frequent task processing.
 
-## Overview
+gRPC was chosen over alternatives such as REST/HTTP, SOAP, and even GraphQL due to its superior performance and efficiency in bidirectional distributed systems. Unlike REST, which relies on text-based JSON payloads, gRPC uses Protocol Buffers, a compact binary format which significantly reduces bandwidth usage and improves latency. Cactus matrices and weights are stored as binaries inherently. gRPC natively supports bi-directional streaming and multiplexing, enabling real-time communication and efficient handling of multiple simultaneous requests, which is critical for a system like Tango that demands high concurrency. SOAP, while robust in enterprise environments, is overly verbose and cumbersome compared to gRPC. GraphQL, although flexible, is primarily designed for query optimization over HTTP rather than high-performance RPC. gRPC's low latency, efficient serialization, built-in code generation enables seamless integration in other languages and Go's concurrency model.
 
-Tango is a distributed computation platform designed to execute heavy matrix operations—such as scaled matrix multiplication—by partitioning tasks across multiple devices. It leverages a microservices architecture built in Go, with secure gRPC communication (using TLS) and stateless JWT authentication. The platform is optimized for scalability, operational efficiency, and seamless integration with cloud services (notably Google Cloud Platform).
+Pub/sub systems are excellent for decoupled, asynchronous messaging and event distribution, they were not selected for Tango due to the need for low-latency, synchronous interactions between the server and worker devices. In Tango, task assignments and immediate responses (such as task confirmations and result reporting) are crucial for effective job management. gRPC supports a request-response model that guarantees quick acknowledgments and direct communication, which is essential for coordinating distributed computation tasks. Pub/sub systems, on the other hand, are better suited for broadcasting events and handling high-volume data streams where eventual consistency is acceptable. Moreover, using pub/sub would introduce additional complexities, such as managing message ordering, ensuring exactly-once processing, and potentially increased latency in message delivery. Thus, gRPC's tightly coupled, bi-directional streaming capabilities make it a more fitting choice for Tango's synchronous task orchestration and real-time communication needs.
 
-## Core Purpose and Objectives
+## Job Submission & Retreival
 
-- **Distributed Computation:** Efficiently partition and distribute computationally intensive tasks (e.g., matrix multiplications) across multiple devices.
-- **Scalability:** Enable dynamic scaling by leveraging parallel processing across distributed compute nodes.
-- **Security:** Secure communications via TLS and JWT authentication to ensure only authorized consumers and devices participate.
-- **Operational Efficiency:** Simplify operations by integrating with GCP services for secret management and logging.
-- **Modular Architecture:** Establish a flexible foundation to support future distributed compute tasks beyond matrix multiplication.
-
-## System Architecture and Workflow
-
-### High-Level Workflow
-
-1. **Job Submission:**  
    - Consumers submit a job through a gRPC `SubmitTask` RPC.
-   - The job includes matrix data, the operation type, and parameters for task splitting.
+   - The job includes matrix data (A and B), the operation type, and parameters for task splitting.
+   - See `test/job_client.go` for a test submission flow.
+   - Each Job is a matmul op with two matrices of any size, and the desired number of split.
+   - The consumer device periodically polls Tango via the `JobStatus` RPC.
+   - Pooling is preferred at the scale Tango is expected to grow to, because it allows asynchronous processing and resource reuse without tying up a single long-lived connection. 
+   - With pooling, tasks can be queued and processed independently for better fault tolerance, and manageability compared to holding a connection open until a job completes. 
+   - This way, clients can submit work and later retrieve results without blocking their connection, and the server can efficiently reuse connection resources across many tasks.
+   - Once done, the consumer device can retreive the result.
 
-2. **Task Distribution:**  
-   - Devices poll for available tasks using the `FetchTask` RPC.
-   - The server reserves a task shard for the device by splitting the matrices into smaller parts.
+## Task Distribution
 
-3. **Task Execution and Reporting:**  
-   - Devices perform computation on the assigned matrix shard.
-   - Results are reported back using the `ReportResult` RPC, updating the overall job status.
+<p align="center"><img src="images/shard.png" alt="2D sharding image"/>
+</p>
 
-4. **Result Aggregation:**  
-   - Once all shards have been processed, the server reassembles the complete result matrix.
+   - We use 2D sharding, where the total number of shards is determined as `ExpectedSplits = rowSplits * colSplits`.
+   - Each shard is assigned a unique index (from 1 to ExpectedSplits), where `rowBlock = (taskIndex - 1) / gridCols` and `colBlock = (taskIndex - 1) % gridCols`.
+   - For a given shard, the starting row is computed as `startRow = rowBlock * rowsPerBlock + min(rowBlock, extraRows)`.
+   - And `endRow = startRow + rowsPerBlock (incremented by 1 if the block is receiving an extra row)`.
+   - The starting and ending column indices for the shard are computed similarly, `startCol = colBlock * colsPerBlock + min(colBlock, extraCols)`.
+   - And `endCol = startCol + colsPerBlock` (adjusted if extra columns are allocated).
+   - Shard A: Extracts a contiguous set of rows from matrix A (from `startRow` to `endRow`).
+   - Shard B: For each row of matrix B, a slice is taken from `startCol` to `endCol` to form the corresponding sub-matrix.
+   - These extracted blocks represent the parts of A and B required to compute one portion of the final multiplication result.
+   - Each device receives a shard pair (from A and B) to process.
+   - If the total number of rows or columns isn’t evenly divisible by the number of splits, the extra rows or columns are distributed evenly among the shards.
+   - After computation, devices return their partial results, which the server later reassembles into the final result matrix.
    - Final transaction logs are uploaded to GCP Cloud Storage.
 
-5. **Security Enforcement:**  
-   - gRPC calls are secured with TLS.
-   - JWT tokens are used to authenticate requests via a custom interceptor.
+## Job Queues and Lifecycle
 
+  - When a consumer submits a job (via the SubmitTask RPC), a new job object is created from the task request. 
+  - This job object encapsulates the complete task details, including the serialized matrices, operation type, and task-splitting parameters (such as the number of row and column splits). 
+  - The job is then stored in a central jobs map and appended to a job queue, which serves as an ordered list of pending jobs awaiting processing.
+  - Once jobs are queued, devices (workers) periodically poll the server for available tasks by invoking the FetchTask RPC. 
+  - The server iterates over the job queue and examines each job to determine if there is an available shard to assign. 
+  - It uses a task reservation mechanism where, for each job, it checks if a shard is either unassigned or its previous assignment has timed out. 
+  - If a shard is available, the system reserves it by updating the job's pending tasks with a new deadline and assigning that task shard to the requesting device. 
+  - This ensures that each task (or shard) is processed only once and can be re-assigned in the event of a device failure or timeout.
+  - After a device processes its assigned shard, it reports the result back to the server using the ReportResult RPC. 
+  - The job object is updated with the received shard result, and a counter (ReceivedUpdates) is incremented. 
+  - When the number of received updates matches the total number of expected splits (derived from the product of row and column splits), the server considers the job complete. 
+  - At this point, the server aggregates all the individual shard results into a final, complete result.
+  - Additionally, background processes, such as the task reaper, periodically clean up expired or unresponsive tasks to maintain the overall system’s robustness.
 
-## Technical and Logical Flow
+## Task Execution & Reporting
 
-- **Initialization:**  
-  The server loads configuration, establishes TLS connections using GCP-provided secrets, and initiates a background process to reap expired tasks.
+   - Devices perform computation on the assigned matrix shard.
+   - Results are reported back using the `ReportResult` RPC, updating the overall job status.
+   - The mobile devices run each op with `Cactus Ferra`, a collection of linear algebra kernels for each device.
+   - Devices return their executed Floating Point Operations (which we use for determining the device owner's payments).
 
-- **Job Lifecycle:**  
-  - **Submission:** Jobs are created from consumer requests and queued.
-  - **Task Assignment:** Devices retrieve tasks; the server splits matrix data based on row/column configuration.
-  - **Processing:** Devices compute their assigned shard.
-  - **Aggregation:** Shard results are collected and merged into a final matrix.
-  - **Finalization:** Logs are stored and the job’s final result is made available.
+## Communication, Security & Compression
 
-- **Security Flow:**  
-  JWT tokens, included in request metadata, are validated against secrets stored in GCP Secret Manager before processing any RPC.
-
-## Design Decisions and Alternatives
-
-- **gRPC with TLS:**  
-  - *Decision:* Provides low-latency, bi-directional communication and secure data transfer.
-  - *Alternative Rejected:* REST/HTTP APIs were considered but deemed less efficient for real-time distributed operations.
-
-- **JWT-Based Authentication:**  
-  - *Decision:* Enables stateless and scalable authentication.
-  - *Alternative Rejected:* External OAuth providers were rejected due to integration complexities with internal secret management.
-
-- **Distributed Task Partitioning:**  
-  - *Decision:* Matrix sharding allows parallel processing and efficient resource usage.
-  - *Alternative Rejected:* Centralized processing was not viable for the required performance and scalability.
-
-- **GCP Integration:**  
-  - *Decision:* Use GCP Secret Manager and Cloud Storage for simplified secret and log management.
-  - *Alternative Rejected:* Self-hosted solutions would add operational overhead and complexity.
-
-- **Implementation in Go:**  
-  - *Decision:* Go’s concurrency model and static binary deployment are ideal for microservices.
-  - *Alternative Rejected:* Other languages were less efficient or more complex for the targeted compute environment.
-
-## Strengths, Limitations, and Risks
-
-### Strengths
-- **Scalability:** Distributes heavy computation across multiple devices for faster processing.
-- **Security:** TLS and JWT ensure secure communication and authentication.
-- **Cloud-Native Design:** Simplifies operations by integrating with cloud services (GCP).
-
-### Limitations
-- **Complex Task Reassembly:** The algorithm for merging matrix shards can be intricate and may require further refinement.
-- **Dependency on GCP:** Tight coupling with GCP services may impact portability.
-- **Basic Logging:** CSV-based logging is simple but might not scale as well as a dedicated database system.
-
-### Risks
-- **Security Breaches:** Compromise of JWT secrets could expose the system.
-- **Performance Bottlenecks:** Reassembly of tasks and job coordination may become bottlenecks under heavy load.
-- **Device and Network Failures:** Distributed processing is inherently vulnerable to intermittent device or network failures.
-
-
-## Business Value and Strategic Importance
-
-- **Competitive Advantage:**  
-  Accelerates compute-intensive tasks such as matrix operations, offering a significant edge in machine learning, analytics, and scientific computing.
-
-- **Cost Efficiency:**  
-  Utilizes distributed devices to optimize resource use and reduce overall compute costs.
-
-- **Strategic Platform:**  
-  Establishes a foundation for a broader distributed computing ecosystem, paving the way for additional advanced compute services.
-
-- **Security and Trust:**  
-  Strong security measures build trust with enterprise customers and safeguard sensitive operations.
-
-
-## Implementation Challenges and Mitigation Strategies
-
-- **Task Scheduling and Reassembly:**  
-  *Challenge:* Ensuring correct assignment and aggregation of matrix shards.  
-  *Mitigation:* Use robust reaper logic, detailed logging, and implement redundancy where necessary.
-
-- **Security Management:**  
-  *Challenge:* Securely managing secrets and JWT tokens across distributed nodes.  
-  *Mitigation:* Regular secret rotation, strict access policies, and continuous monitoring of authentication events.
-
-- **Scalability Under Load:**  
-  *Challenge:* Maintaining performance as the number of concurrent tasks increases.  
-  *Mitigation:* Horizontal scaling, performance stress testing, and optimization of serialization processes.
-
-- **Monitoring and Debugging:**  
-  *Challenge:* Tracking distributed task performance and diagnosing failures.  
-  *Mitigation:* Integrate centralized logging and monitoring tools (e.g., Prometheus, Stackdriver) with alerting systems.
-
+   - gRPC calls are secured with TLS, each communication to Tango muss use the provided TLS certificate, which is used to encrypt and decrypt the matrices in transit.
+   - JWT tokens are used to authenticate requests via a custom interceptor, each call must also present a JWT cactus-token in adition to TLS certificate.
+   - The TLS key and JWT signature for verifying both are stored on GCP secret manager, and only accessible with proper GCP env authentication.
+   - Zstd comppression is used to encode and decode the float32 binaries, this reduces matrices to between 40-50% of their original sizees.
+   - Zstd uses a more modern algorithm that provides higher compression ratios and faster compression speeds than GZip for many data types. 
+   - Zstd uses a blend of dictionary-based compression (similar to LZ77) and entropy coding (specifically Finite State Entropy) to achieve high compression ratios at very fast speeds. 
+   - The algorithm is tunable, allowing you to choose between faster, lower-ratio compression and slower, higher-ratio compression. 
+   - This versatility makes Zstd attractive for many applications where both performance and efficiency are critical.
 
 ## Key Performance Indicators (KPIs)
 
@@ -157,38 +85,34 @@ Tango is a distributed computation platform designed to execute heavy matrix ope
 - **Security Metrics:** Frequency of authentication failures or unauthorized access attempts.
 - **Error and Reassignment Rates:** Frequency of task timeouts or failures that require reassignment.
 
-
 ## Long-Term Vision and Future Expansions
 
-- **Broader Compute Tasks:**  
-  Expand beyond matrix multiplication to support other operations like convolutions or data transformations.
-
-- **Dynamic Scaling:**  
-  Integrate with container orchestration platforms (e.g., Kubernetes) for auto-scaling based on workload.
-
-- **Enhanced Fault Tolerance:**  
-  Develop advanced retry and self-healing mechanisms to improve reliability.
-
-- **Advanced Analytics:**  
-  Implement machine learning for predictive task scheduling, anomaly detection, and performance optimization.
-
-- **Multi-Cloud Support:**  
-  Explore integration with other cloud providers to enhance flexibility and reduce vendor lock-in.
-
-- **User Interface Development:**  
-  Build a dashboard for real-time monitoring, job management, and performance analytics.
-
----
+- Expand beyond matrix multiplication to support other operations like convolutions or data transformations.
+- Integrate with container orchestration platforms (e.g., Kubernetes) for auto-scaling based on workload.
+- Develop advanced retry and self-healing mechanisms to improve reliability.
+- Implement machine learning for predictive task scheduling, anomaly detection, and performance optimization.
+- Explore integration with other cloud providers to enhance flexibility and reduce vendor lock-in.
+- Build a dashboard for real-time monitoring, job management, and performance analytics.
 
 ## Project Setup and Deployment
 
-### Install Packages
+### Install Go
+1. Download and install from the [official Go website](https://golang.org/dl/).
 
-1. **Install Go 1.18+:**  
-   Download and install from the [official Go website](https://golang.org/dl/).
+### Build Protobuf (only when changes are made to tango.proto)
+1. Make the build scripts executable with `chmod +x build.sh`
+2. Rebuild the proto buffers `./build.sh`
 
-### Build Protobuf (Only When Changes Are Made to `tango.proto`)
+### Running the Server locally
+1. Make the build scripts executable with `chmod +x test.sh`
+2. Rebuild the proto buffers `./test.sh`
 
-1. **Make the Build Script Executable:**  
-   ```bash
-   chmod +x build.sh
+### Deploying to GCP Compute Engine
+1. `docker build -t tango:latest .`
+2. `gcloud compute instances create-with-container tango-instance --container-image=tango-registry/tango:latest --zone=<ADD_ZONE>`
+
+### Deploying on a local server
+1. `CGO_ENABLED=0 go build -ldflags="-s -w" -o tango .`
+2. `sudo systemctl daemon-reload`
+3. `sudo systemctl enable tango`
+4. `sudo systemctl start tango`
