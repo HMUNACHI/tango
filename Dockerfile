@@ -1,3 +1,9 @@
+# --------------------------------------------
+# Dockerfile for the Tango server.
+# This multi-stage build compiles the Go binary using the golang:1.20 builder,
+# then packages it in an Alpine Linux runtime image.
+# An entrypoint script is used to validate required environment variables.
+# --------------------------------------------
 FROM golang:1.20 AS builder
 WORKDIR /app
 
@@ -12,9 +18,12 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 COPY config.yaml .
-COPY cactus-gcp-credentials.json .
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 COPY --from=builder /app/tango .
 EXPOSE 50051
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["./tango"]

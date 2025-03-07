@@ -76,6 +76,16 @@ func getTangoJWTSecret() (string, error) {
 // Returns the test token as a string or an error if retrieval fails.
 func GetTestToken() (string, error) {
 	testTokenOnce.Do(func() {
+		// If in production, use environment variable TangoJWTSecret
+		if os.Getenv("ENV") == "production" {
+			token := os.Getenv("TangoJWTSecret")
+			if token == "" {
+				cachedTestTokenErr = fmt.Errorf("TangoJWTSecret env variable not set in production")
+				return
+			}
+			cachedTestToken = token
+			return
+		}
 		if err := SetupGCP(); err != nil {
 			cachedTestTokenErr = fmt.Errorf("failed to setup GCP: %v", err)
 			return
@@ -106,6 +116,18 @@ func GetTestToken() (string, error) {
 // Returns the server certificate and key as strings, or an error if retrieval fails.
 func GetServerSecrets() (string, string, error) {
 	serverSecretsOnce.Do(func() {
+		// If in production, use environment variables
+		if os.Getenv("ENV") == "production" {
+			crt := os.Getenv("TangoTLSCert")
+			key := os.Getenv("TangoTLSKey")
+			if crt == "" || key == "" {
+				cachedServerSecretsErr = fmt.Errorf("TangoTLSCert or TangoTLSKey env variable not set in production")
+				return
+			}
+			cachedServerCrt = crt
+			cachedServerKey = key
+			return
+		}
 		ctx := context.Background()
 		client, err := secretmanager.NewClient(ctx)
 		if err != nil {

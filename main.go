@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net"
+	"os"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -40,9 +41,13 @@ func main() {
 	}
 	creds := credentials.NewTLS(tlsConfig)
 
-	lis, err := net.Listen("tcp", ":50051")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "50051"
+	}
+	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatalf("failed to listen on port %s: %v", port, err)
 	}
 
 	grpcServer := grpc.NewServer(
@@ -53,7 +58,7 @@ func main() {
 	pb.RegisterTangoServiceServer(grpcServer, tangoServer)
 	reflection.Register(grpcServer)
 
-	log.Println("Tango server is running on port :50051 with TLS")
+	log.Printf("Tango server is running on port :%s with TLS", port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
