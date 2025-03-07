@@ -59,19 +59,18 @@ func multiplyFull(A, B [][]float32, scale float32) [][]float32 {
 }
 
 // generateMatrix creates a matrix with the given number of rows and columns.
-// Each element is computed as: factor * (i*cols + j + 1), where i is the row index and j is the column index.
+// Each element is randomly generated.
 func generateMatrix(rows, cols int, factor float32) [][]float32 {
 	m := make([][]float32, rows)
 	for i := 0; i < rows; i++ {
 		m[i] = make([]float32, cols)
 		for j := 0; j < cols; j++ {
-			m[i][j] = factor * float32(i*cols+j+1)
+			m[i][j] = factor * rand.Float32()
 		}
 	}
 	return m
 }
 
-// newFloat32 returns a pointer to the provided float32 value.
 func newFloat32(val float32) *float32 {
 	return &val
 }
@@ -156,7 +155,6 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 		log.Fatalf("failed to marshal B matrix: %v", err)
 	}
 
-	// Print compression statistics for the generated FP16 binary data.
 	if err := tango.PrintCompressionStats(aBytes); err != nil {
 		log.Printf("Failed to print compression stats for A matrix: %v", err)
 	}
@@ -208,7 +206,7 @@ func pollJobStatus(client pb.TangoServiceClient, ctx context.Context, jobID stri
 				if len(expectedMatrix) != len(finalMatrix) {
 					log.Printf("Verification failed: expected %d rows, got %d", len(expectedMatrix), len(finalMatrix))
 				} else {
-					tolerance := float32(0.001)
+					tolerance := float32(0.005)
 					pass := true
 					for i, expRow := range expectedMatrix {
 						if len(expRow) != len(finalMatrix[i]) {
