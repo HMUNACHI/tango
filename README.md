@@ -17,68 +17,23 @@ Pub/sub systems are excellent for decoupled, asynchronous messaging and event di
 
 ## Job Submission & Retreival
 
-   - Consumers submit a job through a gRPC `SubmitTask` RPC.
-   - The job includes matrix data (A and B), the operation type, and parameters for task splitting.
-   - See `test/job_client.go` for a test submission flow.
-   - Each Job is a matmul op with two matrices of any size, and the desired number of split.
-   - The consumer device periodically polls Tango via the `JobStatus` RPC.
-   - Pooling is preferred at the scale Tango is expected to grow to, because it allows asynchronous processing and resource reuse without tying up a single long-lived connection. 
-   - With pooling, tasks can be queued and processed independently for better fault tolerance, and manageability compared to holding a connection open until a job completes. 
-   - This way, clients can submit work and later retrieve results without blocking their connection, and the server can efficiently reuse connection resources across many tasks.
-   - Once done, the consumer device can retreive the result.
+Consumers submit a job through a gRPC `SubmitTask` RPC. The job includes matrix data (A and B), the operation type, and parameters for task splitting. See `test/job_client.go` for a test submission flow. Each Job is a matmul op with two matrices of any size, and the desired number of split. The consumer device periodically polls Tango via the `JobStatus` RPC.
+ Pooling is preferred at the scale Tango is expected to grow to, because it allows asynchronous processing and resource reuse without tying up a single long-lived connection. With pooling, tasks can be queued and processed independently for better fault tolerance, and manageability compared to holding a connection open until a job completes.  This way, clients can submit work and later retrieve results without blocking their connection, and the server can efficiently reuse connection resources across many tasks. Once done, the consumer device can retreive the result.
 
 ## Task Distribution
 
 <p align="center"><img src="images/shard.png" alt="2D sharding image"/>
 </p>
 
-   - We use 2D sharding, where the total number of shards is determined as `ExpectedSplits = rowSplits * colSplits`.
-   - Each shard is assigned a unique index (from 1 to ExpectedSplits), where `rowBlock = (taskIndex - 1) / gridCols` and `colBlock = (taskIndex - 1) % gridCols`.
-   - For a given shard, the starting row is computed as `startRow = rowBlock * rowsPerBlock + min(rowBlock, extraRows)`.
-   - And `endRow = startRow + rowsPerBlock (incremented by 1 if the block is receiving an extra row)`.
-   - The starting and ending column indices for the shard are computed similarly, `startCol = colBlock * colsPerBlock + min(colBlock, extraCols)`.
-   - And `endCol = startCol + colsPerBlock` (adjusted if extra columns are allocated).
-   - Shard A: Extracts a contiguous set of rows from matrix A (from `startRow` to `endRow`).
-   - Shard B: For each row of matrix B, a slice is taken from `startCol` to `endCol` to form the corresponding sub-matrix.
-   - These extracted blocks represent the parts of A and B required to compute one portion of the final multiplication result.
-   - Each device receives a shard pair (from A and B) to process.
-   - If the total number of rows or columns isn’t evenly divisible by the number of splits, the extra rows or columns are distributed evenly among the shards.
-   - After computation, devices return their partial results, which the server later reassembles into the final result matrix.
-   - Final transaction logs are uploaded to GCP Cloud Storage.
+We use 2D sharding, where the total number of shards is determined as `ExpectedSplits = rowSplits * colSplits`. Each shard is assigned a unique index (from 1 to ExpectedSplits), where `rowBlock = (taskIndex - 1) / gridCols` and `colBlock = (taskIndex - 1) % gridCols`. For a given shard, the starting row is computed as `startRow = rowBlock * rowsPerBlock + min(rowBlock, extraRows)`. And `endRow = startRow + rowsPerBlock (incremented by 1 if the block is receiving an extra row)`. The starting and ending column indices for the shard are computed similarly, `startCol = colBlock * colsPerBlock + min(colBlock, extraCols)`. And `endCol = startCol + colsPerBlock` (adjusted if extra columns are allocated). Shard A: Extracts a contiguous set of rows from matrix A (from `startRow` to `endRow`). Shard B: For each row of matrix B, a slice is taken from `startCol` to `endCol` to form the corresponding sub-matrix. These extracted blocks represent the parts of A and B required to compute one portion of the final multiplication result. Each device receives a shard pair (from A and B) to process. If the total number of rows or columns isn’t evenly divisible by the number of splits, the extra rows or columns are distributed evenly among the shards. After computation, devices return their partial results, which the server later reassembles into the final result matrix.Final transaction logs are uploaded to GCP Cloud Storage. Devices perform computation on the assigned matrix shard. Results are reported back using the `ReportResult` RPC, updating the overall job status. The mobile devices run each op with `Cactus Ferra`, a collection of linear algebra kernels for each device. Devices return their executed Floating Point Operations (which we use for determining the device owner's payments).
 
 ## Job Queues and Lifecycle
 
-  - When a consumer submits a job (via the SubmitTask RPC), a new job object is created from the task request. 
-  - This job object encapsulates the complete task details, including the serialized matrices, operation type, and task-splitting parameters (such as the number of row and column splits). 
-  - The job is then stored in a central jobs map and appended to a job queue, which serves as an ordered list of pending jobs awaiting processing.
-  - Once jobs are queued, devices (workers) periodically poll the server for available tasks by invoking the FetchTask RPC. 
-  - The server iterates over the job queue and examines each job to determine if there is an available shard to assign. 
-  - It uses a task reservation mechanism where, for each job, it checks if a shard is either unassigned or its previous assignment has timed out. 
-  - If a shard is available, the system reserves it by updating the job's pending tasks with a new deadline and assigning that task shard to the requesting device. 
-  - This ensures that each task (or shard) is processed only once and can be re-assigned in the event of a device failure or timeout.
-  - After a device processes its assigned shard, it reports the result back to the server using the ReportResult RPC. 
-  - The job object is updated with the received shard result, and a counter (ReceivedUpdates) is incremented. 
-  - When the number of received updates matches the total number of expected splits (derived from the product of row and column splits), the server considers the job complete. 
-  - At this point, the server aggregates all the individual shard results into a final, complete result.
-  - Additionally, background processes, such as the task reaper, periodically clean up expired or unresponsive tasks to maintain the overall system’s robustness.
-
-## Task Execution & Reporting
-
-   - Devices perform computation on the assigned matrix shard.
-   - Results are reported back using the `ReportResult` RPC, updating the overall job status.
-   - The mobile devices run each op with `Cactus Ferra`, a collection of linear algebra kernels for each device.
-   - Devices return their executed Floating Point Operations (which we use for determining the device owner's payments).
+When a consumer submits a job (via the SubmitTask RPC), a new job object is created from the task request.  This job object encapsulates the complete task details, including the serialized matrices, operation type, and task-splitting parameters (such as the number of row and column splits).  The job is then stored in a central jobs map and appended to a job queue, which serves as an ordered list of pending jobs awaiting processing. Once jobs are queued, devices (workers) periodically poll the server for available tasks by invoking the FetchTask RPC.  The server iterates over the job queue and examines each job to determine if there is an available shard to assign. It uses a task reservation mechanism where, for each job, it checks if a shard is either unassigned or its previous assignment has timed out. If a shard is available, the system reserves it by updating the job's pending tasks with a new deadline and assigning that task shard to the requesting device. This ensures that each task (or shard) is processed only once and can be re-assigned in the event of a device failure or timeout. After a device processes its assigned shard, it reports the result back to the server using the ReportResult RPC. The job object is updated with the received shard result, and a counter (ReceivedUpdates) is incremented. When the number of received updates matches the total number of expected splits (derived from the product of row and column splits), the server considers the job complete. At this point, the server aggregates all the individual shard results into a final, complete result. Additionally, background processes, such as the task reaper, periodically clean up expired or unresponsive tasks to maintain the overall system’s robustness.
 
 ## Communication, Security & Compression
 
-   - gRPC calls are secured with TLS, each communication to Tango muss use the provided TLS certificate, which is used to encrypt and decrypt the matrices in transit.
-   - JWT tokens are used to authenticate requests via a custom interceptor, each call must also present a JWT cactus-token in adition to TLS certificate.
-   - The TLS key and JWT signature for verifying both are stored on GCP secret manager, and only accessible with proper GCP env authentication.
-   - Zstd comppression is used to encode and decode the float32 binaries, this reduces matrices to between 40-50% of their original sizees.
-   - Zstd uses a more modern algorithm that provides higher compression ratios and faster compression speeds than GZip for many data types. 
-   - Zstd uses a blend of dictionary-based compression (similar to LZ77) and entropy coding (specifically Finite State Entropy) to achieve high compression ratios at very fast speeds. 
-   - The algorithm is tunable, allowing you to choose between faster, lower-ratio compression and slower, higher-ratio compression. 
-   - This versatility makes Zstd attractive for many applications where both performance and efficiency are critical.
+gRPC calls are secured with TLS, each communication to Tango muss use the provided TLS certificate, which is used to encrypt and decrypt the matrices in transit. JWT tokens are used to authenticate requests via a custom interceptor, each call must also present a JWT cactus-token in adition to TLS certificate. The TLS key and JWT signature for verifying both are stored on GCP secret manager, and only accessible with proper GCP env authentication. Zstd comppression is used to encode and decode the float32 binaries, this reduces matrices to between 40-50% of their original sizees. Zstd uses a more modern algorithm that provides higher compression ratios and faster compression speeds than GZip for many data types.  Zstd uses a blend of dictionary-based compression (similar to LZ77) and entropy coding (specifically Finite State Entropy) to achieve high compression ratios at very fast speeds. The algorithm is tunable, allowing you to choose between faster, lower-ratio compression and slower, higher-ratio compression. This versatility makes Zstd attractive for many applications where both performance and efficiency are critical.
 
 ## Key Performance Indicators (KPIs)
 
