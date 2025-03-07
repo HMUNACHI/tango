@@ -4,7 +4,7 @@
 # then packages it in an Alpine Linux runtime image.
 # An entrypoint script is used to validate required environment variables.
 # --------------------------------------------
-FROM golang:1.20 AS builder
+FROM golang:1.23 AS builder
 WORKDIR /app
 
 COPY go.mod go.sum ./
