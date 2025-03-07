@@ -24,6 +24,9 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// Declare a package-level variable for production server address.
+var prodServerAddr string
+
 // multiplyMatrices multiplies two matrices A and B and scales the resulting matrix by the given scale factor.
 // It returns the product matrix or an error if the matrix dimensions are incompatible.
 func multiplyMatrices(A, B [][]float32, scale float32) ([][]float32, error) {
@@ -73,7 +76,13 @@ func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn)
 		RootCAs:    certPool,
 		ServerName: "tango",
 	})
-	conn, err := grpc.Dial("localhost:50051",
+	var serverAddr string
+	if prodServerAddr != "" {
+		serverAddr = prodServerAddr
+	} else {
+		serverAddr = "localhost:50051"
+	}
+	conn, err := grpc.Dial(serverAddr,
 		grpc.WithTransportCredentials(creds),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
 	)
@@ -164,7 +173,9 @@ func processDevice(deviceID string) {
 // and waits for all goroutines to complete.
 func main() {
 	numDevices := flag.Int("devices", 1000, "number of device to simulate")
+	tangoAddressPointer := flag.String("tango-address", "", "custom server address for production mode (e.g. 'myserver:50051')")
 	flag.Parse()
+	prodServerAddr = *tangoAddressPointer
 
 	var wg sync.WaitGroup
 	for i := 0; i < *numDevices; i++ {

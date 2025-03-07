@@ -1,0 +1,15 @@
+
+FROM golang:1.20 AS builder
+WORKDIR /app
+
+COPY . .
+
+RUN go build -o device_client ./device_client.go
+
+
+FROM alpine:latest
+WORKDIR /root/
+COPY --from=builder /app/device_client .
+
+EXPOSE 8080
+CMD ["./device_client"]
