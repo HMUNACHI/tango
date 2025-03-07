@@ -75,3 +75,9 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 2. `sudo systemctl daemon-reload`
 3. `sudo systemctl enable tango`
 4. `sudo systemctl start tango`
+
+## Contributing
+
+- Fork and clone repository from GitHub, then CD into the directory.
+- Each PR branch must have a separate branch and tested with `./test.sh`.
+- Fetch you service account API key json file form GCP, and save as `cactus-gcp-credentials.json` in the root.
