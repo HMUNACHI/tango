@@ -1,3 +1,7 @@
+/*
+Tango is a product of Cactus Compute, Inc.
+This code is proprietary. Do not share the code.
+*/
 package tango
 
 import (
@@ -9,6 +13,9 @@ import (
 	"time"
 )
 
+// createJob constructs and returns a new Job instance based on the provided TaskRequest.
+// It initializes the job fields with data from the request, including the matrices,
+// expected splits, scale factor, and pending tasks map.
 func createJob(req *pb.TaskRequest) *Job {
 	return &Job{
 		ConsumerID:      req.ConsumerId,
@@ -37,6 +44,9 @@ func createJob(req *pb.TaskRequest) *Job {
 	}
 }
 
+// SubmitTask handles the submission of a new task by a consumer.
+// It creates a new job using the provided TaskRequest, adds it to the jobs map and job queue,
+// and returns a TaskResponse indicating successful submission.
 func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskResponse, error) {
 	job := createJob(req)
 	s.jobsMu.Lock()
@@ -50,6 +60,9 @@ func (s *server) SubmitTask(ctx context.Context, req *pb.TaskRequest) (*pb.TaskR
 	}, nil
 }
 
+// getAvailableTaskIndex searches for an available task (shard) index within a job that is either unassigned
+// or whose assignment deadline has expired. It reserves the task for the requesting device by updating
+// the PendingTasks map with a new deadline and returns the task index along with a boolean indicating success.
 func getAvailableTaskIndex(job *Job, now int64, deviceID string) (int, bool) {
 	job.mu.Lock()
 	defer job.mu.Unlock()
@@ -75,6 +88,9 @@ func getAvailableTaskIndex(job *Job, now int64, deviceID string) (int, bool) {
 	return taskIndex, found
 }
 
+// prepareTaskAssignment generates a TaskAssignment for the given job and task index.
+// It unmarshals the full matrix data from the job, calculates the appropriate block (shard)
+// based on the task index and grid dimensions, and returns the shard data as a TaskAssignment.
 func prepareTaskAssignment(job *Job, taskIndex, gridRows, gridCols int) (*pb.TaskAssignment, error) {
 	var fullA, fullB [][]float32
 	if err := json.Unmarshal(job.AData, &fullA); err != nil {
@@ -136,6 +152,10 @@ func prepareTaskAssignment(job *Job, taskIndex, gridRows, gridCols int) (*pb.Tas
 	return assignment, nil
 }
 
+// FetchTask is invoked by a device to retrieve an available task assignment.
+// It iterates over the job queue and for each job, attempts to find an unassigned or expired task.
+// If an available task is found, it prepares the assignment and returns it. If no tasks are available,
+// an error is returned.
 func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.TaskAssignment, error) {
 	now := time.Now().UnixNano()
 
@@ -164,6 +184,7 @@ func (s *server) FetchTask(ctx context.Context, req *pb.DeviceRequest) (*pb.Task
 	return nil, fmt.Errorf("no available tasks")
 }
 
+// min returns the smaller of two integers.
 func min(a, b int) int {
 	if a < b {
 		return a

@@ -1,20 +1,20 @@
-FROM golang:1.18 AS builder
+FROM golang:1.20 AS builder
 WORKDIR /app
-
-ENV ENV=production
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o tango ./src
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o tango .
 
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
+FROM alpine:3.18
+RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
-COPY --from=builder /app/tango .
-COPY --from=builder /app/config.yaml .
+COPY config.yaml .
+COPY cactus-gcp-credentials.json .
 
+COPY --from=builder /app/tango .
 EXPOSE 50051
-ENTRYPOINT ["./tango"]
+
+CMD ["./tango"]

@@ -1,3 +1,7 @@
+/*
+Tango is a product of Cactus Compute, Inc.
+This code is proprietary. Do not share the code.
+*/
 package tango
 
 import (
@@ -16,6 +20,11 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// ValidateJWT validates a JSON Web Token (JWT) using the provided secret key.
+// It checks the token format, decodes the header, payload, and signature,
+// verifies the algorithm (HS256), compares the expected and provided signatures,
+// and ensures the token has not expired.
+// Returns the payload as a map if the token is valid, otherwise an error.
 func ValidateJWT(token, secretKey string) (map[string]interface{}, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
@@ -71,12 +80,18 @@ func ValidateJWT(token, secretKey string) (map[string]interface{}, error) {
 	return payload, nil
 }
 
+// generateHmacSha256Signature generates an HMAC-SHA256 signature for the given data
+// using the provided secret key. It returns the resulting signature as a byte slice.
 func generateHmacSha256Signature(data, secretKey string) []byte {
 	h := hmac.New(sha256.New, []byte(secretKey))
 	h.Write([]byte(data))
 	return h.Sum(nil)
 }
 
+// TokenInterceptor is a gRPC unary interceptor that validates the JWT provided in the request metadata.
+// It retrieves the "cactus-token" from the incoming metadata, fetches the expected JWT secret,
+// validates the token using ValidateJWT, and only allows the request to proceed if the token is valid.
+// Returns an error if the token is missing or invalid.
 func TokenInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {

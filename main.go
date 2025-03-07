@@ -1,3 +1,7 @@
+/*
+Tango is a product of Cactus Compute, Inc.
+This code is proprietary. Do not share the code.
+*/
 package main
 
 import (
@@ -13,6 +17,9 @@ import (
 	pb "cactus/tango/src/protobuff"
 )
 
+// main initializes the Tango gRPC server with TLS encryption,
+// sets up required GCP configurations and secrets, and begins
+// listening on port :50051 for incoming connections.
 func main() {
 	if err := tango.SetupGCP(); err != nil {
 		log.Fatalf("failed to setup GCP: %v", err)
@@ -38,7 +45,10 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer(grpc.Creds(creds), grpc.UnaryInterceptor(tango.TokenInterceptor))
+	grpcServer := grpc.NewServer(
+		grpc.Creds(creds),
+		grpc.UnaryInterceptor(tango.TokenInterceptor),
+	)
 	tangoServer := tango.NewServer()
 	pb.RegisterTangoServiceServer(grpcServer, tangoServer)
 	reflection.Register(grpcServer)

@@ -1,3 +1,7 @@
+/*
+Tango is a product of Cactus Compute, Inc.
+This code is proprietary. Do not share the code.
+*/
 package main
 
 import (
@@ -20,6 +24,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// multiplyMatrices multiplies two matrices A and B and scales the resulting matrix by the given scale factor.
+// It returns the product matrix or an error if the matrix dimensions are incompatible.
 func multiplyMatrices(A, B [][]float32, scale float32) ([][]float32, error) {
 	if len(A) == 0 || len(B) == 0 || len(A[0]) != len(B) {
 		return nil, errors.New("incompatible matrix dimensions")
@@ -39,6 +45,8 @@ func multiplyMatrices(A, B [][]float32, scale float32) ([][]float32, error) {
 	return C, nil
 }
 
+// matrixToString converts a 2D matrix of float32 values into a formatted string.
+// Each element is printed with two decimal places and rows are separated by newlines.
 func matrixToString(mat [][]float32) string {
 	s := ""
 	for _, row := range mat {
@@ -50,6 +58,8 @@ func matrixToString(mat [][]float32) string {
 	return s
 }
 
+// initDeviceClient initializes and returns a TangoService gRPC client and its connection for the specified deviceID.
+// It sets up TLS using server secrets and returns the client and underlying connection.
 func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn) {
 	crt, _, err := tango.GetServerSecrets()
 	if err != nil {
@@ -63,13 +73,18 @@ func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn)
 		RootCAs:    certPool,
 		ServerName: "tango",
 	})
-	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial("localhost:50051",
+		grpc.WithTransportCredentials(creds),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
+	)
 	if err != nil {
 		log.Fatalf("Device %s: failed to connect: %v", deviceID, err)
 	}
 	return pb.NewTangoServiceClient(conn), conn
 }
 
+// createAuthCtx creates an authenticated context for the given device using a test token.
+// It returns the context with metadata and a cancel function to free resources.
 func createAuthCtx(deviceID string) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	token, err := tango.GetTestToken()
@@ -81,6 +96,9 @@ func createAuthCtx(deviceID string) (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
+// processTask fetches and processes a task for the specified device.
+// If the task operation is "scaled_matmul", it performs matrix multiplication on the provided matrices,
+// formats the result as a string, and reports the result back to the Tango service.
 func processTask(deviceID string, client pb.TangoServiceClient) {
 	ctx, cancel := createAuthCtx(deviceID)
 	req := &pb.DeviceRequest{DeviceId: deviceID}
@@ -130,6 +148,8 @@ func processTask(deviceID string, client pb.TangoServiceClient) {
 	}
 }
 
+// processDevice continuously processes tasks for the given device.
+// It initializes a client for the device and repeatedly fetches and processes tasks at 1-second intervals.
 func processDevice(deviceID string) {
 	client, conn := initDeviceClient(deviceID)
 	defer conn.Close()
@@ -139,6 +159,9 @@ func processDevice(deviceID string) {
 	}
 }
 
+// main is the entry point of the program.
+// It parses the number of devices to simulate from the command-line flag, spawns a goroutine for each device,
+// and waits for all goroutines to complete.
 func main() {
 	numDevices := flag.Int("devices", 1000, "number of device to simulate")
 	flag.Parse()

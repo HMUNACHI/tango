@@ -1,3 +1,7 @@
+/*
+Tango is a product of Cactus Compute, Inc.
+This code is proprietary. Do not share the code.
+*/
 package main
 
 import (
@@ -20,6 +24,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// matrixToString converts a 2D float32 matrix into a formatted string.
+// Each element is formatted to two decimal places and rows are separated by newlines.
 func matrixToString(mat [][]float32) string {
 	s := ""
 	for _, row := range mat {
@@ -31,6 +37,9 @@ func matrixToString(mat [][]float32) string {
 	return s
 }
 
+// multiplyFull multiplies matrix A by matrix B and scales the result by the given scale factor.
+// A should be of dimensions m x d and B of dimensions d x n.
+// It returns the resulting m x n matrix.
 func multiplyFull(A, B [][]float32, scale float32) [][]float32 {
 	m := len(A)
 	d := len(B)
@@ -49,6 +58,8 @@ func multiplyFull(A, B [][]float32, scale float32) [][]float32 {
 	return C
 }
 
+// generateMatrix creates a matrix with the given number of rows and columns.
+// Each element is computed as: factor * (i*cols + j + 1), where i is the row index and j is the column index.
 func generateMatrix(rows, cols int, factor float32) [][]float32 {
 	m := make([][]float32, rows)
 	for i := 0; i < rows; i++ {
@@ -60,10 +71,13 @@ func generateMatrix(rows, cols int, factor float32) [][]float32 {
 	return m
 }
 
+// newFloat32 returns a pointer to the provided float32 value.
 func newFloat32(val float32) *float32 {
 	return &val
 }
 
+// parseMatrix converts a string representation of a matrix into a 2D slice of float32.
+// The string should have rows separated by newlines and values separated by spaces.
 func parseMatrix(s string) ([][]float32, error) {
 	var result [][]float32
 	rows := strings.Split(strings.TrimSpace(s), "\n")
@@ -86,6 +100,10 @@ func parseMatrix(s string) ([][]float32, error) {
 	return result, nil
 }
 
+// initClient initializes the gRPC client for the Tango service using TLS.
+// It retrieves server secrets, sets up the TLS configuration, and creates a context with a timeout
+// that includes the necessary authentication token. It returns the TangoServiceClient, context,
+// cancel function, and the gRPC connection.
 func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *grpc.ClientConn) {
 	crt, _, err := tango.GetServerSecrets()
 	if err != nil {
@@ -99,7 +117,10 @@ func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *
 		RootCAs:    certPool,
 		ServerName: "tango",
 	})
-	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
+	conn, err := grpc.Dial("localhost:50051",
+		grpc.WithTransportCredentials(creds),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
+	)
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)
 	}
@@ -115,6 +136,9 @@ func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *
 	return client, ctx, cancel, conn
 }
 
+// submitJob creates and submits a matrix multiplication job to the Tango service.
+// It generates a random job ID, creates two matrices A and B, marshals them into JSON,
+// and constructs a TaskRequest. If the task is accepted, it returns the job ID and the matrices.
 func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]float32, [][]float32) {
 	rand.Seed(uint64(time.Now().UnixNano()))
 	taskID := rand.Intn(10000)
@@ -130,6 +154,14 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 	bBytes, err := json.Marshal(bMatrix)
 	if err != nil {
 		log.Fatalf("failed to marshal B matrix: %v", err)
+	}
+
+	// Print compression statistics for the generated FP16 binary data.
+	if err := tango.PrintCompressionStats(aBytes); err != nil {
+		log.Printf("Failed to print compression stats for A matrix: %v", err)
+	}
+	if err := tango.PrintCompressionStats(bBytes); err != nil {
+		log.Printf("Failed to print compression stats for B matrix: %v", err)
 	}
 
 	jobReq := &pb.TaskRequest{
@@ -155,6 +187,9 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 	return jobID, aMatrix, bMatrix
 }
 
+// pollJobStatus continuously polls the Tango service for the status of the submitted job.
+// It stops polling when the job is complete or a timeout is reached.
+// Once complete, it parses and verifies the final result against the expected matrix multiplication result.
 func pollJobStatus(client pb.TangoServiceClient, ctx context.Context, jobID string, aMatrix, bMatrix [][]float32) {
 	waitTime := 100 * time.Second
 	for {
@@ -209,6 +244,9 @@ func pollJobStatus(client pb.TangoServiceClient, ctx context.Context, jobID stri
 	}
 }
 
+// main is the entry point of the program.
+// It initializes the gRPC client, submits a matrix multiplication job,
+// and polls for the job's status until the computation is complete.
 func main() {
 	client, ctx, cancel, conn := initClient()
 	defer cancel()

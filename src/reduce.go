@@ -1,3 +1,7 @@
+/*
+Tango is a product of Cactus Compute, Inc.
+This code is proprietary. Do not share the code.
+*/
 package tango
 
 import (
@@ -9,6 +13,11 @@ import (
 	"strings"
 )
 
+// ReportResult processes the result of a task reported by a device.
+// It retrieves the corresponding job, validates the task ID to extract the shard index,
+// and then updates the job's results. Once all expected results are received,
+// it reassembles the final result and uploads transaction records to GCS.
+// A successful ResultResponse is returned to acknowledge the processed result.
 func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.ResultResponse, error) {
 	s.jobsMu.RLock()
 	job, exists := s.jobs[res.JobId]
@@ -68,6 +77,9 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 	}, nil
 }
 
+// extractShardIndex parses the task ID to extract the shard index.
+// The task ID is expected to be in the format "prefix_index" (e.g., "task_3").
+// It returns the shard index as an integer, or an error if the format is invalid.
 func extractShardIndex(taskId string) (int, error) {
 	parts := strings.Split(taskId, "_")
 	if len(parts) != 2 {
@@ -76,6 +88,11 @@ func extractShardIndex(taskId string) (int, error) {
 	return strconv.Atoi(parts[1])
 }
 
+// reassembleCShards reassembles the final result matrix from individual shard results.
+// It takes a map of shard indices to their respective result data and the number of columns in the result grid.
+// The function organizes shards into a 2D grid, concatenates each row of shards,
+// and returns the final aggregated result as a byte slice.
+// An error is returned if any shard is missing or if the reassembly fails.
 func reassembleCShards(results map[int][]byte, gridCols int) ([]byte, error) {
 	total := len(results)
 	if total == 0 {

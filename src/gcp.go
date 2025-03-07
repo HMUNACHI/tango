@@ -1,3 +1,7 @@
+/*
+Tango is a product of Cactus Compute, Inc.
+This code is proprietary. Do not share the code.
+*/
 package tango
 
 import (
@@ -10,6 +14,10 @@ import (
 	secretmanagerpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
+// SetupGCP sets up the Google Cloud Platform environment for non-production use.
+// It checks if the "GOOGLE_APPLICATION_CREDENTIALS" environment variable is set.
+// If not set and the environment is not "production", it attempts to use the default
+// credentials file "cactus-gcp-credentials.json". Returns an error if neither condition is met.
 func SetupGCP() error {
 	if os.Getenv("ENV") != "production" && os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") == "" {
 		defaultCredFile := "cactus-gcp-credentials.json"
@@ -22,6 +30,7 @@ func SetupGCP() error {
 	return nil
 }
 
+// Global variables used for caching secrets retrieved from GCP Secret Manager.
 var (
 	cachedTangoJWTSecret   string
 	cachedSecretErr        error
@@ -35,6 +44,9 @@ var (
 	serverSecretsOnce      sync.Once
 )
 
+// getTangoJWTSecret retrieves and caches the Tango JWT secret from GCP Secret Manager.
+// It uses sync.Once to ensure that the secret is fetched only once.
+// Returns the JWT secret as a string or an error if retrieval fails.
 func getTangoJWTSecret() (string, error) {
 	jwtSecretOnce.Do(func() {
 		ctx := context.Background()
@@ -59,6 +71,9 @@ func getTangoJWTSecret() (string, error) {
 	return cachedTangoJWTSecret, cachedSecretErr
 }
 
+// GetTestToken retrieves and caches a test token from GCP Secret Manager.
+// It ensures the GCP environment is properly set up and uses sync.Once to fetch the token only once.
+// Returns the test token as a string or an error if retrieval fails.
 func GetTestToken() (string, error) {
 	testTokenOnce.Do(func() {
 		if err := SetupGCP(); err != nil {
@@ -86,6 +101,9 @@ func GetTestToken() (string, error) {
 	return cachedTestToken, cachedTestTokenErr
 }
 
+// GetServerSecrets retrieves and caches the server certificate and key from GCP Secret Manager.
+// It uses sync.Once to ensure the secrets are fetched only once.
+// Returns the server certificate and key as strings, or an error if retrieval fails.
 func GetServerSecrets() (string, string, error) {
 	serverSecretsOnce.Do(func() {
 		ctx := context.Background()

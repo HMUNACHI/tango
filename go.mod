@@ -7,6 +7,7 @@ toolchain go1.23.6
 require (
 	cloud.google.com/go/secretmanager v1.14.5
 	cloud.google.com/go/storage v1.50.0
+	github.com/klauspost/compress v1.18.0
 	github.com/spf13/viper v1.19.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	google.golang.org/grpc v1.70.0
