@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"sync"
@@ -11,8 +12,11 @@ import (
 
 	tango "cactus/tango/src"
 	pb "cactus/tango/src/protobuff"
+	"crypto/tls"
+	"crypto/x509"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -46,76 +50,105 @@ func matrixToString(mat [][]float32) string {
 	return s
 }
 
+func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn) {
+	crt, _, err := tango.GetServerSecrets()
+	if err != nil {
+		log.Fatalf("Device %s: failed to get server secrets: %v", deviceID, err)
+	}
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM([]byte(crt)) {
+		log.Fatalf("Device %s: failed to append server cert", deviceID)
+	}
+	creds := credentials.NewTLS(&tls.Config{
+		RootCAs:            certPool,
+		InsecureSkipVerify: true,
+	})
+	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
+	if err != nil {
+		log.Fatalf("Device %s: failed to connect: %v", deviceID, err)
+	}
+	return pb.NewTangoServiceClient(conn), conn
+}
+
+func createAuthCtx(deviceID string) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	token, err := tango.GetTestToken()
+	if err != nil {
+		log.Fatalf("Device %s: failed to get test token: %v", deviceID, err)
+	}
+	md := metadata.New(map[string]string{"cactus-token": token})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+	return ctx, cancel
+}
+
+func processTask(deviceID string, client pb.TangoServiceClient) {
+	ctx, cancel := createAuthCtx(deviceID)
+	req := &pb.DeviceRequest{DeviceId: deviceID}
+	task, err := client.FetchTask(ctx, req)
+	cancel()
+	if err != nil {
+		return
+	}
+	var resultData []byte
+	if task.Operation == "scaled_matmul" {
+		var A, B [][]float32
+		if err := json.Unmarshal(task.AData, &A); err != nil {
+			log.Fatalf("Device %s: failed to unmarshal AData: %v", deviceID, err)
+		}
+		if err := json.Unmarshal(task.BData, &B); err != nil {
+			log.Fatalf("Device %s: failed to unmarshal BData: %v", deviceID, err)
+		}
+		scale := float32(1.0)
+		if task.ScaleScalar != nil {
+			scale = *task.ScaleScalar
+		}
+		C, err := multiplyMatrices(A, B, scale)
+		if err != nil {
+			log.Fatalf("Device %s: matrix multiplication error: %v", deviceID, err)
+		}
+		resultData = []byte(matrixToString(C))
+	} else {
+		resultData = []byte("unsupported operation")
+	}
+
+	taskRes := &pb.TaskResult{
+		DeviceId:   deviceID,
+		JobId:      task.JobId,
+		TaskId:     task.TaskId,
+		ResultData: resultData,
+		Flops:      2 * task.M * task.N * task.D,
+	}
+	ctx, cancel = createAuthCtx(deviceID)
+	report, err := client.ReportResult(ctx, taskRes)
+	cancel()
+	if err != nil {
+		log.Printf("Device %s: ReportResult failed: %v", deviceID, err)
+		return
+	}
+	if !report.Success {
+		log.Printf("Device %s: ReportResult failed: %s", deviceID, report.Message)
+	}
+}
+
+func processDevice(deviceID string) {
+	client, conn := initDeviceClient(deviceID)
+	defer conn.Close()
+	for {
+		processTask(deviceID, client)
+		time.Sleep(1 * time.Second)
+	}
+}
+
 func main() {
+	numDevices := flag.Int("devices", 1000, "number of device to simulate")
+	flag.Parse()
+
 	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
+	for i := 0; i < *numDevices; i++ {
 		wg.Add(1)
 		go func(deviceID string) {
 			defer wg.Done()
-			conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-			if err != nil {
-				log.Fatalf("Device %s: failed to connect: %v", deviceID, err)
-			}
-			defer conn.Close()
-			client := pb.NewTangoServiceClient(conn)
-			for {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				token, err := tango.GetTestToken()
-				if err != nil {
-					log.Fatalf("Device %s: failed to get test token: %v", deviceID, err)
-				}
-				md := metadata.New(map[string]string{"cactus-token": token})
-				ctx = metadata.NewOutgoingContext(ctx, md)
-				req := &pb.DeviceRequest{DeviceId: deviceID}
-
-				task, err := client.FetchTask(ctx, req)
-				if err != nil {
-					cancel()
-					time.Sleep(2 * time.Second)
-					continue
-				}
-				var resultData []byte
-				if task.Operation == "scaled_matmul" {
-					var A, B [][]float32
-					if err := json.Unmarshal(task.AData, &A); err != nil {
-						log.Fatalf("Device %s: failed to unmarshal AData: %v", deviceID, err)
-					}
-					if err := json.Unmarshal(task.BData, &B); err != nil {
-						log.Fatalf("Device %s: failed to unmarshal BData: %v", deviceID, err)
-					}
-					scale := float32(1.0)
-					if task.ScaleScalar != nil {
-						scale = *task.ScaleScalar
-					}
-					C, err := multiplyMatrices(A, B, scale)
-					if err != nil {
-						log.Fatalf("Device %s: matrix multiplication error: %v", deviceID, err)
-					}
-					resultData = []byte(matrixToString(C))
-				} else {
-					resultData = []byte("unsupported operation")
-				}
-
-				taskRes := &pb.TaskResult{
-					DeviceId:   deviceID,
-					JobId:      task.JobId,
-					TaskId:     task.TaskId,
-					ResultData: resultData,
-					Flops:      2 * task.M * task.N * task.D,
-				}
-				report, err := client.ReportResult(ctx, taskRes)
-				if err != nil {
-					log.Printf("Device %s: ReportResult failed: %v", deviceID, err)
-					cancel()
-					time.Sleep(2 * time.Second)
-					continue
-				}
-				if !report.Success {
-					log.Printf("Device %s: ReportResult failed: %s", deviceID, report.Message)
-				}
-				cancel()
-				time.Sleep(1 * time.Second)
-			}
+			processDevice(deviceID)
 		}(fmt.Sprintf("TestDevice%d", i))
 	}
 	wg.Wait()

@@ -11,8 +11,12 @@ import (
 	tango "cactus/tango/src"
 	pb "cactus/tango/src/protobuff"
 
+	"crypto/tls"
+	"crypto/x509"
+
 	"golang.org/x/exp/rand"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -82,25 +86,36 @@ func parseMatrix(s string) ([][]float32, error) {
 	return result, nil
 }
 
-func main() {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *grpc.ClientConn) {
+	crt, _, err := tango.GetServerSecrets()
+	if err != nil {
+		log.Fatalf("failed to get server secrets: %v", err)
+	}
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM([]byte(crt)) {
+		log.Fatalf("failed to append server cert")
+	}
+	creds := credentials.NewTLS(&tls.Config{
+		RootCAs:            certPool,
+		InsecureSkipVerify: true,
+	})
+	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)
 	}
-	defer conn.Close()
 	client := pb.NewTangoServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	token, err := tango.GetTestToken()
 	if err != nil {
 		log.Fatalf("failed to get test token: %v", err)
 	}
-
 	md := metadata.New(map[string]string{"cactus-token": token})
 	ctx = metadata.NewOutgoingContext(ctx, md)
+	return client, ctx, cancel, conn
+}
 
+func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]float32, [][]float32) {
 	rand.Seed(uint64(time.Now().UnixNano()))
 	taskID := rand.Intn(10000)
 	jobID := fmt.Sprintf("Job%d", taskID)
@@ -112,7 +127,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to marshal A matrix: %v", err)
 	}
-
 	bBytes, err := json.Marshal(bMatrix)
 	if err != nil {
 		log.Fatalf("failed to marshal B matrix: %v", err)
@@ -138,9 +152,15 @@ func main() {
 	if !res.Accepted {
 		log.Fatalf("SubmitTask for %s rejected: %s", jobID, res.Message)
 	}
+	return jobID, aMatrix, bMatrix
+}
 
+func pollJobStatus(client pb.TangoServiceClient, ctx context.Context, jobID string, aMatrix, bMatrix [][]float32) {
+	waitTime := 100 * time.Second
 	for {
-		status, err := client.GetJobStatus(ctx, &pb.JobStatusRequest{JobId: jobID})
+		pollCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		status, err := client.GetJobStatus(pollCtx, &pb.JobStatusRequest{JobId: jobID})
+		cancel()
 		if err != nil {
 			log.Fatalf("GetJobStatus failed: %v", err)
 		}
@@ -181,6 +201,19 @@ func main() {
 			}
 			break
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(100 * time.Millisecond)
+		waitTime -= 100 * time.Millisecond
+		if waitTime <= 0 {
+			log.Fatalf("Job %s did not complete within expected time.", jobID)
+		}
 	}
+}
+
+func main() {
+	client, ctx, cancel, conn := initClient()
+	defer cancel()
+	defer conn.Close()
+
+	jobID, aMatrix, bMatrix := submitJob(client, ctx)
+	pollJobStatus(client, ctx, jobID, aMatrix, bMatrix)
 }

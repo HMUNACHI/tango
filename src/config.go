@@ -31,6 +31,8 @@ type GCPConfig struct {
 	KeyFile             string `mapstructure:"key_file"`
 	JWTSecretName       string `mapstructure:"jwt_secret_name"`
 	TestTokenSecretName string `mapstructure:"test_token_secret_name"`
+	ServerCrt           string `mapstructure:"server_crt"`
+	ServerKey           string `mapstructure:"server_key"`
 }
 
 type Config struct {

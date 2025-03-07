@@ -10,6 +10,8 @@ gcp:
   key_file: "cactus-gcp-credentials.json"
   jwt_secret_name: "projects/263237337139/secrets/TangoJWTSecret/versions/latest"
   test_token_secret_name: "projects/263237337139/secrets/TangoTestTokens/versions/1"
+  server_crt: "projects/263237337139/secrets/TangoTLSCert/versions/1"
+  server_key: "projects/263237337139/secrets/TangoTLSKey/versions/1"
 
 task:
   timeout_seconds: 1

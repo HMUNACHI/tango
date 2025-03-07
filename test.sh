@@ -1,11 +1,12 @@
 #!/bin/bash
+
 echo "Starting server..."
 go run main.go &
 SERVER_PID=$!
 sleep 3 
 
 echo "Starting device simulator..."
-go run test/device_client.go &
+go run test/device_client.go --devices 100 &
 DEVICE_PID=$!
 sleep 3 
 

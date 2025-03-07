@@ -23,12 +23,16 @@ func SetupGCP() error {
 }
 
 var (
-	cachedTangoJWTSecret string
-	cachedSecretErr      error
-	jwtSecretOnce        sync.Once
-	cachedTestToken      string
-	cachedTestTokenErr   error
-	testTokenOnce        sync.Once
+	cachedTangoJWTSecret   string
+	cachedSecretErr        error
+	jwtSecretOnce          sync.Once
+	cachedTestToken        string
+	cachedTestTokenErr     error
+	testTokenOnce          sync.Once
+	cachedServerCrt        string
+	cachedServerKey        string
+	cachedServerSecretsErr error
+	serverSecretsOnce      sync.Once
 )
 
 func getTangoJWTSecret() (string, error) {
@@ -80,4 +84,37 @@ func GetTestToken() (string, error) {
 		cachedTestToken = string(result.Payload.Data)
 	})
 	return cachedTestToken, cachedTestTokenErr
+}
+
+func GetServerSecrets() (string, string, error) {
+	serverSecretsOnce.Do(func() {
+		ctx := context.Background()
+		client, err := secretmanager.NewClient(ctx)
+		if err != nil {
+			cachedServerSecretsErr = fmt.Errorf("failed to create secret manager client: %v", err)
+			return
+		}
+		defer client.Close()
+
+		crtReq := &secretmanagerpb.AccessSecretVersionRequest{
+			Name: AppConfig.GCP.ServerCrt,
+		}
+		crtResp, err := client.AccessSecretVersion(ctx, crtReq)
+		if err != nil {
+			cachedServerSecretsErr = fmt.Errorf("failed to access server_crt: %v", err)
+			return
+		}
+		cachedServerCrt = string(crtResp.Payload.Data)
+
+		keyReq := &secretmanagerpb.AccessSecretVersionRequest{
+			Name: AppConfig.GCP.ServerKey,
+		}
+		keyResp, err := client.AccessSecretVersion(ctx, keyReq)
+		if err != nil {
+			cachedServerSecretsErr = fmt.Errorf("failed to access server_key: %v", err)
+			return
+		}
+		cachedServerKey = string(keyResp.Payload.Data)
+	})
+	return cachedServerCrt, cachedServerKey, cachedServerSecretsErr
 }
