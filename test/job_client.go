@@ -96,8 +96,8 @@ func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *
 		log.Fatalf("failed to append server cert")
 	}
 	creds := credentials.NewTLS(&tls.Config{
-		RootCAs:            certPool,
-		InsecureSkipVerify: true,
+		RootCAs:    certPool,
+		ServerName: "tango",
 	})
 	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
 	if err != nil {

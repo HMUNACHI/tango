@@ -30,3 +30,5 @@ __pycache__/
 
 # Cactus GCP credentials
 cactus-gcp-credentials.json
+server.crt
+server.key
