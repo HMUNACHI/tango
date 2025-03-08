@@ -116,7 +116,6 @@ func GetTestToken() (string, error) {
 // Returns the server certificate and key as strings, or an error if retrieval fails.
 func GetServerSecrets() (string, string, error) {
 	serverSecretsOnce.Do(func() {
-		// If in production, use environment variables
 		if os.Getenv("ENV") == "production" {
 			crt := os.Getenv("TangoTLSCert")
 			key := os.Getenv("TangoTLSKey")

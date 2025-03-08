@@ -68,9 +68,6 @@ func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn)
 		creds credentials.TransportCredentials
 	)
 
-	// When in production, use system default roots.
-
-	// For non-production, use server secrets.
 	crt, _, err := tango.GetServerSecrets()
 	if err != nil {
 		log.Fatalf("Device %s: failed to get server secrets: %v", deviceID, err)
@@ -81,16 +78,11 @@ func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn)
 	}
 	creds = credentials.NewTLS(&tls.Config{
 		RootCAs:    certPool,
-		ServerName: "tango-263237337139.us-central1.run.app",
+		ServerName: "tango-test-2-263237337139.us-central1.run.app",
 	})
 
-	var serverAddr string
-	if prodServerAddr != "" {
-		serverAddr = prodServerAddr
-	} else {
-		// Use Cloud Run address with proper host:port format (no scheme)
-		serverAddr = "tango-263237337139.us-central1.run.app:443"
-	}
+	serverAddr := "tango-263237337139.us-central1.run.app:443"
+
 	conn, err := grpc.Dial(serverAddr,
 		grpc.WithTransportCredentials(creds),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),

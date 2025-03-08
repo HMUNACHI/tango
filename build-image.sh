@@ -1,1 +1,0 @@
-gcloud builds submit --tag gcr.io/cactus-v1/tango:latest .
