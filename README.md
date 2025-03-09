@@ -63,14 +63,17 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 2. Rebuild the proto buffers `./build.sh`
 
 ### Running the Server locally
-1. Make the build scripts executable with `chmod +x test.sh`
-2. Rebuild the proto buffers `./test.sh`
+1. Fetch you service account API key json file form GCP, and save as `cactus-gcp-credentials.json` in the root.
+2. Ensure you have insalled gcloud and then run `gcloud auth login`.
+3. Make the build scripts executable with `chmod +x test.sh`
+4. Build and run `./test.sh`
 
 ### Deploying to GCP Compute Engine
 1. `docker build -t tango:latest .`
-2. `gcloud compute instances create-with-container tango-instance --container-image=tango-registry/tango:latest --zone=<ADD_ZONE>`
+2. In addition to the previous section, ensure docker is istalled and then run `gcloud auth configure-docker`
 
 ### Deploying on a local server
+
 1. `CGO_ENABLED=0 go build -ldflags="-s -w" -o tango .`
 2. `sudo systemctl daemon-reload`
 3. `sudo systemctl enable tango`
@@ -80,4 +83,3 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 
 - Fork and clone repository from GitHub, then CD into the directory.
 - Each PR branch must have a separate branch and tested with `./test.sh`.
-- Fetch you service account API key json file form GCP, and save as `cactus-gcp-credentials.json` in the root.

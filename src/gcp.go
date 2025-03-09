@@ -7,28 +7,11 @@ package tango
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
-
-// SetupGCP sets up the Google Cloud Platform environment for non-production use.
-// It checks if the "GOOGLE_APPLICATION_CREDENTIALS" environment variable is set.
-// If not set and the environment is not "production", it attempts to use the default
-// credentials file "cactus-gcp-credentials.json". Returns an error if neither condition is met.
-func SetupGCP() error {
-	if os.Getenv("ENV") != "production" && os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") == "" {
-		defaultCredFile := "cactus-gcp-credentials.json"
-		if _, err := os.Stat(defaultCredFile); err == nil {
-			os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", defaultCredFile)
-		} else {
-			return fmt.Errorf("GOOGLE_APPLICATION_CREDENTIALS env variable not set and default (%s) not found", defaultCredFile)
-		}
-	}
-	return nil
-}
 
 // Global variables used for caching secrets retrieved from GCP Secret Manager.
 var (
@@ -76,20 +59,6 @@ func getTangoJWTSecret() (string, error) {
 // Returns the test token as a string or an error if retrieval fails.
 func GetTestToken() (string, error) {
 	testTokenOnce.Do(func() {
-		// If in production, use environment variable TangoJWTSecret
-		if os.Getenv("ENV") == "production" {
-			token := os.Getenv("TangoJWTSecret")
-			if token == "" {
-				cachedTestTokenErr = fmt.Errorf("TangoJWTSecret env variable not set in production")
-				return
-			}
-			cachedTestToken = token
-			return
-		}
-		if err := SetupGCP(); err != nil {
-			cachedTestTokenErr = fmt.Errorf("failed to setup GCP: %v", err)
-			return
-		}
 		ctx := context.Background()
 		client, err := secretmanager.NewClient(ctx)
 		if err != nil {
@@ -116,17 +85,6 @@ func GetTestToken() (string, error) {
 // Returns the server certificate and key as strings, or an error if retrieval fails.
 func GetServerSecrets() (string, string, error) {
 	serverSecretsOnce.Do(func() {
-		if os.Getenv("ENV") == "production" {
-			crt := os.Getenv("TangoTLSCert")
-			key := os.Getenv("TangoTLSKey")
-			if crt == "" || key == "" {
-				cachedServerSecretsErr = fmt.Errorf("TangoTLSCert or TangoTLSKey env variable not set in production")
-				return
-			}
-			cachedServerCrt = crt
-			cachedServerKey = key
-			return
-		}
 		ctx := context.Background()
 		client, err := secretmanager.NewClient(ctx)
 		if err != nil {

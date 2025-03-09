@@ -5,13 +5,13 @@
 
 set -e
 
-if [ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
-  defaultCredFile="cactus-gcp-credentials.json"
+if [[ "$ENV" != "production" && -z "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
+  defaultCredFile="./cactus-gcp-credentials.json" 
   if [ -f "$defaultCredFile" ]; then
-    export GOOGLE_APPLICATION_CREDENTIALS="$defaultCredFile"
+      export GOOGLE_APPLICATION_CREDENTIALS="$defaultCredFile"
   else
-    echo "ERROR: GOOGLE_APPLICATION_CREDENTIALS is not set and default file ($defaultCredFile) not found."
-    exit 1
+      echo "WARNING: GOOGLE_APPLICATION_CREDENTIALS not set and default ($defaultCredFile) not found. Using ADC from metadata server."
+      exit 1
   fi
 fi
 

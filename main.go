@@ -22,10 +22,6 @@ import (
 // sets up required GCP configurations and secrets, and begins
 // listening on port :50051 for incoming connections.
 func main() {
-	if err := tango.SetupGCP(); err != nil {
-		log.Fatalf("failed to setup GCP: %v", err)
-	}
-
 	crtStr, keyStr, err := tango.GetServerSecrets()
 	if err != nil {
 		log.Fatalf("failed to get server secrets: %v", err)
