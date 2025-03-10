@@ -25,7 +25,22 @@ Consumers submit a job through a gRPC `SubmitTask` RPC. The job includes matrix 
 <p align="center"><img src="files/shard.png" alt="2D sharding image"/>
 </p>
 
-We use 2D sharding, where the total number of shards is determined as `ExpectedSplits = rowSplits * colSplits`. Each shard is assigned a unique index (from 1 to ExpectedSplits), where `rowBlock = (taskIndex - 1) / gridCols` and `colBlock = (taskIndex - 1) % gridCols`. For a given shard, the starting row is computed as `startRow = rowBlock * rowsPerBlock + min(rowBlock, extraRows)`. And `endRow = startRow + rowsPerBlock (incremented by 1 if the block is receiving an extra row)`. The starting and ending column indices for the shard are computed similarly, `startCol = colBlock * colsPerBlock + min(colBlock, extraCols)`. And `endCol = startCol + colsPerBlock` (adjusted if extra columns are allocated). Shard A: Extracts a contiguous set of rows from matrix A (from `startRow` to `endRow`). Shard B: For each row of matrix B, a slice is taken from `startCol` to `endCol` to form the corresponding sub-matrix. These extracted blocks represent the parts of A and B required to compute one portion of the final multiplication result. Each device receives a shard pair (from A and B) to process. If the total number of rows or columns isn’t evenly divisible by the number of splits, the extra rows or columns are distributed evenly among the shards. After computation, devices return their partial results, which the server later reassembles into the final result matrix.Final transaction logs are uploaded to GCP Cloud Storage. Devices perform computation on the assigned matrix shard. Results are reported back using the `ReportResult` RPC, updating the overall job status. The mobile devices run each op with `Cactus Ferra`, a collection of linear algebra kernels for each device. Devices return their executed Floating Point Operations (which we use for determining the device owner's payments).
+Tango uses a 2D sharding strategy to partition matrix operations:
+
+- **Shard Calculation:**  
+  - **Total Shards:** `ExpectedSplits = rowSplits * colSplits`
+  - **Shard Indexing:**  
+    - `rowBlock = (taskIndex - 1) / gridCols`  
+    - `colBlock = (taskIndex - 1) % gridCols`
+- **Determining Block Boundaries:**  
+  - **Rows:**  
+    - `startRow = rowBlock * rowsPerBlock + min(rowBlock, extraRows)`  
+    - `endRow = startRow + rowsPerBlock` (incremented by 1 if extra rows are allocated)
+  - **Columns:**  
+    - `startCol = colBlock * colsPerBlock + min(colBlock, extraCols)`  
+    - `endCol = startCol + colsPerBlock` (adjusted for extra columns)
+
+Each device receives a pair of shards (one from matrix A and one from matrix B) to process. After computation, devices return their partial results, which are later reassembled into the final result matrix. Transaction logs are uploaded to GCP Cloud Storage. Additionally, devices use `Cactus Ferra`, a collection of linear algebra kernels, and report their executed floating point operations for payment determinations.
 
 ## Job Queues and Lifecycle
 
