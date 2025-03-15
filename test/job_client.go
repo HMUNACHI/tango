@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"strings"
@@ -18,11 +19,19 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
+	"net"
+
 	"golang.org/x/exp/rand"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
+
+var tangoAddress string
+
+func init() {
+	flag.StringVar(&tangoAddress, "tango-address", "localhost:50051", " address of the Tango service")
+}
 
 // matrixToString converts a 2D float32 matrix into a formatted string.
 // Each element is formatted to two decimal places and rows are separated by newlines.
@@ -112,11 +121,19 @@ func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *
 	if !certPool.AppendCertsFromPEM([]byte(crt)) {
 		log.Fatalf("failed to append server cert")
 	}
+	if !strings.Contains(tangoAddress, ":") {
+		tangoAddress = tangoAddress + ":50051"
+	}
+	_, _, err = net.SplitHostPort(tangoAddress)
+	if err != nil {
+		log.Fatalf("invalid tango address: %v", err)
+	}
 	creds := credentials.NewTLS(&tls.Config{
 		RootCAs:    certPool,
 		ServerName: "tango",
 	})
-	conn, err := grpc.Dial("localhost:50051",
+
+	conn, err := grpc.Dial(tangoAddress,
 		grpc.WithTransportCredentials(creds),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
 	)
@@ -246,6 +263,9 @@ func pollJobStatus(client pb.TangoServiceClient, ctx context.Context, jobID stri
 // It initializes the gRPC client, submits a matrix multiplication job,
 // and polls for the job's status until the computation is complete.
 func main() {
+	flag.Parse()
+	log.Printf("Using tango address: %s", tangoAddress)
+
 	client, ctx, cancel, conn := initClient()
 	defer cancel()
 	defer conn.Close()

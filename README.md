@@ -64,6 +64,7 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 
 ### Running the Server locally
 1. Fetch you service account API key json file form GCP, and save as `cactus-gcp-credentials.json` in the root.
+2. Set GCP auth env variable by running `export GOOGLE_APPLICATION_CREDENTIALS=cactus-gcp-credentials.json`
 2. Ensure you have insalled gcloud and then run `gcloud auth login`.
 3. Make the build scripts executable with `chmod +x test.sh`
 4. Build and run `./test.sh`

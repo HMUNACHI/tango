@@ -113,8 +113,10 @@ func processTask(deviceID string, client pb.TangoServiceClient) {
 	task, err := client.FetchTask(ctx, req)
 	cancel()
 	if err != nil {
+		// log.Printf("Device %s: error fetching task: %v", deviceID, err)
 		return
 	}
+	log.Printf("Device %s: fetched task: %+v", deviceID, task)
 	var resultData []byte
 	if task.Operation == "scaled_matmul" {
 		var A, B [][]float32
@@ -171,10 +173,14 @@ func processDevice(deviceID string) {
 // It parses the number of devices to simulate from the command-line flag, spawns a goroutine for each device,
 // and waits for all goroutines to complete.
 func main() {
-	numDevices := flag.Int("devices", 1000, "number of device to simulate")
-	tangoAddressPointer := flag.String("tango-address", "", "custom server address (e.g. 'myserver:50051')")
+	numDevices := flag.Int("devices", 100, "number of device to simulate")
+	tangoAddressPointer := flag.String("tango-address", "localhost:50051", "the external IP for the Tango server")
 	flag.Parse()
+
 	serverAddr = *tangoAddressPointer
+	if serverAddr == "" {
+		serverAddr = "localhost:50051"
+	}
 
 	var wg sync.WaitGroup
 	for i := 0; i < *numDevices; i++ {
