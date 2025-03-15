@@ -5,16 +5,7 @@
 
 set -e
 
-if [[ "$ENV" != "production" && -z "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
-  defaultCredFile="./cactus-gcp-credentials.json" 
-  if [ -f "$defaultCredFile" ]; then
-      export GOOGLE_APPLICATION_CREDENTIALS="$defaultCredFile"
-  else
-      echo "WARNING: GOOGLE_APPLICATION_CREDENTIALS not set and default ($defaultCredFile) not found. Using ADC from metadata server."
-      exit 1
-  fi
-fi
-
+export GOOGLE_APPLICATION_CREDENTIALS=cactus-gcp-credentials.json
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 go mod tidy
@@ -57,7 +48,7 @@ echo "Server PID: $SERVER_PID"
 echo "Device Simulator PID: $DEVICE_PID"
 echo "Job Submission PID: $JOB_PID"
 
-SLEEP_DURATION=5
+SLEEP_DURATION=30  # increased from 5 to 30 seconds
 echo "Test will run for $SLEEP_DURATION seconds..."
 sleep $SLEEP_DURATION
 

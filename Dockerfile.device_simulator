@@ -8,11 +8,11 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -o device_client ./device_client.go
+RUN go build -v -o device_client ./test/device_client.go
 
 FROM alpine:latest
+RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/device_client .
 
-EXPOSE 8080
 CMD ["./device_client"]

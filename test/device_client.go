@@ -16,11 +16,8 @@ import (
 
 	tango "cactus/tango/src"
 	pb "cactus/tango/src/protobuff"
-	"crypto/tls"
-	"crypto/x509"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -60,29 +57,17 @@ func matrixToString(mat [][]float32) string {
 	return s
 }
 
-// initDeviceClient initializes and returns a TangoService gRPC client and its connection for the specified deviceID.
-// It sets up TLS using server secrets and returns the client and underlying connection.
+// Simplified initDeviceClient: removed TLS configuration and use insecure.
 func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn) {
-	crt, _, err := tango.GetServerSecrets()
-	if err != nil {
-		log.Fatalf("Device %s: failed to get server secrets: %v", deviceID, err)
-	}
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM([]byte(crt)) {
-		log.Fatalf("Device %s: failed to append server cert", deviceID)
-	}
-	creds := credentials.NewTLS(&tls.Config{
-		RootCAs:    certPool,
-		ServerName: "tango",
-	})
-	var serverAddr string
+	// Remove GetServerSecrets, certPool and TLS settings.
+	var addr string
 	if serverAddr != "" {
-		serverAddr = serverAddr
+		addr = serverAddr
 	} else {
-		serverAddr = "localhost:50051"
+		addr = "localhost:50051"
 	}
-	conn, err := grpc.Dial(serverAddr,
-		grpc.WithTransportCredentials(creds),
+	conn, err := grpc.Dial(addr,
+		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
 	)
 	if err != nil {

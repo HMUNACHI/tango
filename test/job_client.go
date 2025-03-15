@@ -16,14 +16,10 @@ import (
 	tango "cactus/tango/src"
 	pb "cactus/tango/src/protobuff"
 
-	"crypto/tls"
-	"crypto/x509"
-
 	"net"
 
 	"golang.org/x/exp/rand"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -108,33 +104,17 @@ func parseMatrix(s string) ([][]float32, error) {
 	return result, nil
 }
 
-// initClient initializes the gRPC client for the Tango service using TLS.
-// It retrieves server secrets, sets up the TLS configuration, and creates a context with a timeout
-// that includes the necessary authentication token. It returns the TangoServiceClient, context,
-// cancel function, and the gRPC connection.
+// Simplified initClient: removed TLS config and use insecure connection.
 func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *grpc.ClientConn) {
-	crt, _, err := tango.GetServerSecrets()
-	if err != nil {
-		log.Fatalf("failed to get server secrets: %v", err)
-	}
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM([]byte(crt)) {
-		log.Fatalf("failed to append server cert")
-	}
 	if !strings.Contains(tangoAddress, ":") {
 		tangoAddress = tangoAddress + ":50051"
 	}
-	_, _, err = net.SplitHostPort(tangoAddress)
+	_, _, err := net.SplitHostPort(tangoAddress)
 	if err != nil {
 		log.Fatalf("invalid tango address: %v", err)
 	}
-	creds := credentials.NewTLS(&tls.Config{
-		RootCAs:    certPool,
-		ServerName: "tango",
-	})
-
 	conn, err := grpc.Dial(tangoAddress,
-		grpc.WithTransportCredentials(creds),
+		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
 	)
 	if err != nil {
