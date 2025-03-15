@@ -1,18 +1,27 @@
 # --------------------------------------------
 # Dockerfile for the Tango device client.
-# It compiles the device simulator Go application using golang:1.20 and runs it on an Alpine base image.
+# It compiles the device simulator Go application using golang:1.23 and runs it on an Alpine base image.
 # --------------------------------------------
 
-FROM golang:1.20 AS builder
+FROM golang:1.23 AS builder
 WORKDIR /app
 
+# Copy dependency files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy entire source
 COPY . .
 
-RUN go build -v -o device_client ./test/device_client.go
+# Build the device client binary.
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o device_client ./test/device_client.go
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=builder /app/device_client .
 
-CMD ["./device_client"]
+# Copy the built binary and the config file.
+COPY --from=builder /app/device_client .
+COPY --from=builder /app/config.yaml .
+
+CMD ["./device_client", "--tango-address", "34.46.21.254:50051"]

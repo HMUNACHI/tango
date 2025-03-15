@@ -36,7 +36,7 @@ SERVER_PID=$!
 sleep 3
 
 echo "Starting device simulator..."
-go run test/device_client.go --devices 100 &
+go run test/device_client.go --devices --tango-address localhost:50051 100 &
 DEVICE_PID=$!
 sleep 3
 
@@ -48,7 +48,7 @@ echo "Server PID: $SERVER_PID"
 echo "Device Simulator PID: $DEVICE_PID"
 echo "Job Submission PID: $JOB_PID"
 
-SLEEP_DURATION=30  # increased from 5 to 30 seconds
+SLEEP_DURATION=5  
 echo "Test will run for $SLEEP_DURATION seconds..."
 sleep $SLEEP_DURATION
 

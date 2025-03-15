@@ -71,29 +71,28 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 ## Project Setup and Deployment
 
 ### Install Go
+
 1. Download and install from the [official Go website](https://golang.org/dl/).
 
-### Build Protobuf (only when changes are made to tango.proto)
-1. Make the build scripts executable with `chmod +x build.sh`
-2. Rebuild the proto buffers `./build.sh`
-
 ### Running the Server locally
+
 1. Fetch you service account API key json file form GCP, and save as `cactus-gcp-credentials.json` in the root.
 2. Set GCP auth env variable by running `export GOOGLE_APPLICATION_CREDENTIALS=cactus-gcp-credentials.json`
 2. Ensure you have insalled gcloud and then run `gcloud auth login`.
-3. Make the build scripts executable with `chmod +x test.sh`
+3. Make the test scripts executable with `chmod +x test.sh`
 4. Build and run `./test.sh`
 
-### Deploying to GCP Compute Engine
-1. `docker build -t tango:latest .`
-2. In addition to the previous section, ensure docker is istalled and then run `gcloud auth configure-docker`
+### Deploying Tango instance
 
-### Deploying on a local server
+1. First, test locally as described in the test section 
+2. Make the deploy scripts executable with `chmod +x deploy_device_simulator.sh`
+3. Build and run `./deploy_device_simulator.sh`, which deploys to a static IP
 
-1. `CGO_ENABLED=0 go build -ldflags="-s -w" -o tango .`
-2. `sudo systemctl daemon-reload`
-3. `sudo systemctl enable tango`
-4. `sudo systemctl start tango`
+### Deploying device simulator
+
+1. First, test locally as described in the test section 
+2. Make the deploy scripts executable with `chmod +x deploy.sh`
+3. Build and run `./deploy.sh`, which deploys to a static IP
 
 ## Contributing
 

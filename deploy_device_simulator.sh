@@ -5,7 +5,7 @@
 set -e
 
 DEFAULT_PROJECT_ID="cactus-v1-452518"
-DEFAULT_INSTANCE_NAME="tango-device-simulator"
+DEFAULT_INSTANCE_NAME="device-simulator"
 DEFAULT_ZONE="us-central1-c"
 DEFAULT_MACHINE_TYPE="n1-standard-1"
 
@@ -14,18 +14,12 @@ INSTANCE_NAME=${2:-$DEFAULT_INSTANCE_NAME}
 ZONE=${3:-$DEFAULT_ZONE}
 MACHINE_TYPE=${4:-$DEFAULT_MACHINE_TYPE}
 
-IMAGE_NAME="tango-device-simulator:latest"
+IMAGE_NAME="device-simulator:latest"
 FULL_IMAGE_NAME="gcr.io/${PROJECT_ID}/tango-device-simulator:latest"
-
-TANGO_IP=$(gcloud compute addresses describe tango-static-ip \
-  --project=${PROJECT_ID} \
-  --region=us-central1 \
-  --format="value(address)")
 
 echo "Using Project ID: ${PROJECT_ID}"
 echo "Using Instance Name: ${INSTANCE_NAME}"
 echo "Using Zone: ${ZONE}"
-echo "Using Tango IP: ${TANGO_IP}"
 
 echo "Starting Docker..."
 open -a "Docker Desktop" || true
@@ -54,7 +48,6 @@ gcloud compute instances create-with-container ${INSTANCE_NAME} \
     --zone=${ZONE} \
     --service-account=tango-service-acount@${PROJECT_ID}.iam.gserviceaccount.com \
     --scopes=https://www.googleapis.com/auth/cloud-platform \
-    --container-arg="--tango-address=${TANGO_IP}"
 
 echo "Device simulator instance created."
 echo "To SSH into the instance, run: gcloud compute ssh ${INSTANCE_NAME} --zone=${ZONE} --project=${PROJECT_ID}"

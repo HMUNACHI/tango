@@ -59,7 +59,6 @@ func matrixToString(mat [][]float32) string {
 
 // Simplified initDeviceClient: removed TLS configuration and use insecure.
 func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn) {
-	// Remove GetServerSecrets, certPool and TLS settings.
 	var addr string
 	if serverAddr != "" {
 		addr = serverAddr
@@ -148,7 +147,7 @@ func processDevice(deviceID string) {
 	defer conn.Close()
 	for {
 		processTask(deviceID, client)
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -156,14 +155,16 @@ func processDevice(deviceID string) {
 // It parses the number of devices to simulate from the command-line flag, spawns a goroutine for each device,
 // and waits for all goroutines to complete.
 func main() {
-	numDevices := flag.Int("devices", 100, "number of device to simulate")
-	tangoAddressPointer := flag.String("tango-address", "localhost:50051", "the external IP for the Tango server")
+	numDevices := flag.Int("devices", 100, "number of devices to simulate")
+	tangoAddressPointer := flag.String("tango-address", "", "the external IP for the Tango server")
 	flag.Parse()
 
-	serverAddr = *tangoAddressPointer
-	if serverAddr == "" {
-		serverAddr = "localhost:50051"
+	if *tangoAddressPointer == "" {
+		log.Fatalf("Tango address must be explicitly provided via --tango-address flag")
 	}
+	serverAddr = *tangoAddressPointer
+
+	fmt.Printf("Using Tango server address: %s\n", serverAddr)
 
 	var wg sync.WaitGroup
 	for i := 0; i < *numDevices; i++ {
