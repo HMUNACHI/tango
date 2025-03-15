@@ -113,10 +113,8 @@ func processTask(deviceID string, client pb.TangoServiceClient) {
 	task, err := client.FetchTask(ctx, req)
 	cancel()
 	if err != nil {
-		// log.Printf("Device %s: error fetching task: %v", deviceID, err)
 		return
 	}
-	log.Printf("Device %s: fetched task: %+v", deviceID, task)
 	var resultData []byte
 	if task.Operation == "scaled_matmul" {
 		var A, B [][]float32
