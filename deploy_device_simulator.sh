@@ -51,3 +51,6 @@ gcloud compute instances create-with-container ${INSTANCE_NAME} \
 
 echo "Device simulator instance created."
 echo "To SSH into the instance, run: gcloud compute ssh ${INSTANCE_NAME} --zone=${ZONE} --project=${PROJECT_ID}"
+
+echo testing...
+go run test/job_client.go --tango-address 34.46.21.254:50051

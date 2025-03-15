@@ -93,6 +93,7 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 1. First, test locally as described in the test section 
 2. Make the deploy scripts executable with `chmod +x deploy.sh`
 3. Build and run `./deploy.sh`, which deploys to a static IP
+4. Run production test with `./test.sh --production`
 
 ## Contributing
 
