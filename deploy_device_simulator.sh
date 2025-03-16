@@ -4,6 +4,8 @@
 
 set -e
 
+export GOOGLE_APPLICATION_CREDENTIALS=cactus-gcp-credentials.json
+
 DEFAULT_PROJECT_ID="cactus-v1-452518"
 DEFAULT_INSTANCE_NAME="device-simulator"
 DEFAULT_ZONE="us-central1-c"
