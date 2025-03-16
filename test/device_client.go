@@ -57,7 +57,7 @@ func matrixToString(mat [][]float32) string {
 	return s
 }
 
-// Simplified initDeviceClient: removed TLS configuration and use insecure.
+// initDeviceClient initializes a gRPC client for the device without using TLS.
 func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn) {
 	var addr string
 	if serverAddr != "" {
@@ -70,18 +70,19 @@ func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn)
 		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
 	)
 	if err != nil {
-		log.Fatalf("Device %s: failed to connect: %v", deviceID, err)
+		log.Printf("Device %s: failed to connect: %v", deviceID, err)
+		return nil, nil
 	}
 	return pb.NewTangoServiceClient(conn), conn
 }
 
-// createAuthCtx creates an authenticated context for the given device using a test token.
-// It returns the context with metadata and a cancel function to free resources.
+// createAuthCtx creates an authenticated context for the device using a test token.
 func createAuthCtx(deviceID string) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	token, err := tango.GetTestToken()
 	if err != nil {
-		log.Fatalf("Device %s: failed to get test token: %v", deviceID, err)
+		log.Printf("Device %s: failed to get test token: %v", deviceID, err)
+		return ctx, cancel
 	}
 	md := metadata.New(map[string]string{"cactus-token": token})
 	ctx = metadata.NewOutgoingContext(ctx, md)
@@ -89,24 +90,25 @@ func createAuthCtx(deviceID string) (context.Context, context.CancelFunc) {
 }
 
 // processTask fetches and processes a task for the specified device.
-// If the task operation is "scaled_matmul", it performs matrix multiplication on the provided matrices,
-// formats the result as a string, and reports the result back to the Tango service.
 func processTask(deviceID string, client pb.TangoServiceClient) {
 	ctx, cancel := createAuthCtx(deviceID)
 	req := &pb.DeviceRequest{DeviceId: deviceID}
 	task, err := client.FetchTask(ctx, req)
 	cancel()
 	if err != nil {
+		//log.Printf("Device %s: FetchTask failed: %v", deviceID, err)
 		return
 	}
 	var resultData []byte
 	if task.Operation == "scaled_matmul" {
 		var A, B [][]float32
 		if err := json.Unmarshal(task.AData, &A); err != nil {
-			log.Fatalf("Device %s: failed to unmarshal AData: %v", deviceID, err)
+			log.Printf("Device %s: failed to unmarshal AData: %v", deviceID, err)
+			return
 		}
 		if err := json.Unmarshal(task.BData, &B); err != nil {
-			log.Fatalf("Device %s: failed to unmarshal BData: %v", deviceID, err)
+			log.Printf("Device %s: failed to unmarshal BData: %v", deviceID, err)
+			return
 		}
 		scale := float32(1.0)
 		if task.ScaleScalar != nil {
@@ -114,7 +116,8 @@ func processTask(deviceID string, client pb.TangoServiceClient) {
 		}
 		C, err := multiplyMatrices(A, B, scale)
 		if err != nil {
-			log.Fatalf("Device %s: matrix multiplication error: %v", deviceID, err)
+			log.Printf("Device %s: matrix multiplication error: %v", deviceID, err)
+			return
 		}
 		resultData = []byte(matrixToString(C))
 	} else {
@@ -141,9 +144,12 @@ func processTask(deviceID string, client pb.TangoServiceClient) {
 }
 
 // processDevice continuously processes tasks for the given device.
-// It initializes a client for the device and repeatedly fetches and processes tasks at 1-second intervals.
 func processDevice(deviceID string) {
 	client, conn := initDeviceClient(deviceID)
+	if client == nil || conn == nil {
+		log.Printf("Device %s: Unable to initialize client", deviceID)
+		return
+	}
 	defer conn.Close()
 	for {
 		processTask(deviceID, client)
@@ -152,15 +158,14 @@ func processDevice(deviceID string) {
 }
 
 // main is the entry point of the program.
-// It parses the number of devices to simulate from the command-line flag, spawns a goroutine for each device,
-// and waits for all goroutines to complete.
 func main() {
 	numDevices := flag.Int("devices", 100, "number of devices to simulate")
 	tangoAddressPointer := flag.String("tango-address", "", "the external IP for the Tango server")
 	flag.Parse()
 
 	if *tangoAddressPointer == "" {
-		log.Fatalf("Tango address must be explicitly provided via --tango-address flag")
+		log.Printf("Tango address must be explicitly provided via --tango-address flag")
+		return
 	}
 	serverAddr = *tangoAddressPointer
 
