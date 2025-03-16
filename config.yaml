@@ -15,8 +15,8 @@ gcp:
   server_key: "projects/263237337139/secrets/TangoTLSKey/versions/latest"
 
 task:
-  timeout_seconds: 1
-  reaper_interval_milliseconds: 500
+  timeout_seconds: 2
+  reaper_interval_milliseconds: 2000 
 
 logging:
   level: "INFO"

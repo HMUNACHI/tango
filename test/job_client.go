@@ -140,8 +140,15 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 	taskID := rand.Intn(10000)
 	jobID := fmt.Sprintf("Job%d", taskID)
 
-	aMatrix := generateMatrix(16, 8, 0.1)
-	bMatrix := generateMatrix(8, 16, 0.1)
+	M := 512
+	N := 512
+	D := 512
+
+	var RowSplit int32 = 4
+	var ColSplit int32 = 4
+
+	aMatrix := generateMatrix(M, D, 0.1)
+	bMatrix := generateMatrix(D, N, 0.1)
 
 	aBytes, err := json.Marshal(aMatrix)
 	if err != nil {
@@ -165,11 +172,11 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 		Operation:   "scaled_matmul",
 		AData:       aBytes,
 		BData:       bBytes,
-		RowSplits:   8,
-		ColSplits:   4,
-		M:           16,
-		N:           16,
-		D:           8,
+		RowSplits:   RowSplit,
+		ColSplits:   ColSplit,
+		M:           int32(M),
+		N:           int32(N),
+		D:           int32(D),
 		ScaleScalar: newFloat32(1.0),
 	}
 	res, err := client.SubmitTask(ctx, jobReq)
@@ -188,7 +195,7 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 func pollJobStatus(client pb.TangoServiceClient, ctx context.Context, jobID string, aMatrix, bMatrix [][]float32) {
 	waitTime := 100 * time.Second
 	for {
-		pollCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		pollCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		status, err := client.GetJobStatus(pollCtx, &pb.JobStatusRequest{JobId: jobID})
 		cancel()
 		if err != nil {

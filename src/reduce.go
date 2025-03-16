@@ -112,6 +112,11 @@ func reassembleCShards(results map[int][]byte, gridCols int) ([]byte, error) {
 		shards[rowBlock][colBlock] = lines
 	}
 
+	expectedShards := gridRows * gridCols
+	if len(results) < expectedShards {
+		return nil, fmt.Errorf("insufficient shards: expected %d but got %d", expectedShards, len(results))
+	}
+
 	var fullRows []string
 	for r := 0; r < gridRows; r++ {
 		if len(shards[r]) == 0 || len(shards[r][0]) == 0 {

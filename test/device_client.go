@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"runtime"
 	"sync"
 	"time"
 
@@ -159,9 +160,12 @@ func processDevice(deviceID string) {
 
 // main is the entry point of the program.
 func main() {
-	numDevices := flag.Int("devices", 100, "number of devices to simulate")
+	// Change default number of devices from 100 to runtime.NumCPU()
+	numDevices := flag.Int("devices", runtime.NumCPU(), "number of devices to simulate")
 	tangoAddressPointer := flag.String("tango-address", "", "the external IP for the Tango server")
 	flag.Parse()
+
+	log.Printf("Number of devices: %d", *numDevices)
 
 	if *tangoAddressPointer == "" {
 		log.Printf("Tango address must be explicitly provided via --tango-address flag")

@@ -70,9 +70,10 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 
 ## Project Setup and Deployment
 
-### Install Go
+### Installations
 
-1. Download and install from the [official Go website](https://golang.org/dl/).
+1. Download and install Go from the [official Go website](https://golang.org/dl/).
+2. Install `protoc` for building the protocol buffers with `brew install protobuf`
 
 ### Running the Server locally
 

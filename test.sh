@@ -14,6 +14,7 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 DEFAULT_PROJECT_ID="cactus-v1-452518"
 PROJECT_ID="$DEFAULT_PROJECT_ID"
 PRODUCTION_FLAG=0
+SLEEP_DURATION=5
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -52,6 +53,8 @@ protoc -I. \
   --go-grpc_out=src/protobuff --go-grpc_opt=paths=source_relative \
   protobuff.proto
 
+protoc -I. --cpp_out=cpp protobuff.proto
+
 cleanup() {
   echo "Stopping all processes..."
   kill $SERVER_PID $DEVICE_PID $JOB_PID 2>/dev/null || true
@@ -71,12 +74,12 @@ if [ $PRODUCTION_FLAG -eq 0 ]; then
   echo "Starting server..."
   go run main.go &
   SERVER_PID=$!
-  sleep 3
+  sleep 2
 
   echo "Starting device simulator..."
-  go run test/device_client.go --devices=100 --tango-address ${TANGO_ADDRESS} &
+  go run test/device_client.go --tango-address ${TANGO_ADDRESS} &
   DEVICE_PID=$!
-  sleep 3
+  sleep 2
 fi
 
 echo "Starting job submission client..."
@@ -87,7 +90,6 @@ echo "Server PID: $SERVER_PID"
 echo "Device Simulator PID: $DEVICE_PID"
 echo "Job Submission PID: $JOB_PID"
 
-SLEEP_DURATION=5  
 echo "Test will run for $SLEEP_DURATION seconds..."
 sleep $SLEEP_DURATION
 

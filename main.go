@@ -17,6 +17,7 @@ import (
 )
 
 func main() {
+	MESSAGE_LIMIT := 21 * 1024 * 1024
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "50051"
@@ -28,8 +29,12 @@ func main() {
 		log.Fatalf("failed to listen on %s: %v", listenAddress, err)
 	}
 
+	opts := []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(MESSAGE_LIMIT),
+		grpc.MaxSendMsgSize(MESSAGE_LIMIT),
+	}
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(tango.TokenInterceptor),
+		append(opts, grpc.UnaryInterceptor(tango.TokenInterceptor))...,
 	)
 	tangoServer := tango.NewServer()
 	pb.RegisterTangoServiceServer(grpcServer, tangoServer)
