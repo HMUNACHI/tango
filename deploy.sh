@@ -9,7 +9,7 @@ set -e
 DEFAULT_PROJECT_ID="cactus-v1-452518"
 DEFAULT_INSTANCE_NAME="tango-v1"
 DEFAULT_ZONE="us-central1-c"
-DEFAULT_MACHINE_TYPE="c2-standard-4"
+DEFAULT_MACHINE_TYPE="c2d-standard-2"
 
 PROJECT_ID=${1:-$DEFAULT_PROJECT_ID}
 INSTANCE_NAME=${2:-$DEFAULT_INSTANCE_NAME}
@@ -59,11 +59,11 @@ gcloud compute instances create-with-container ${INSTANCE_NAME} \
     --tags=http-server,https-server,grpc-server \
     --create-disk=auto-delete=yes,device-name=tango,image=projects/debian-cloud/global/images/debian-12-bookworm-v20250212,mode=rw,size=10,type=pd-balanced
 
-echo "Creating a firewall rule to allow gRPC traffic..."
-gcloud compute firewall-rules create allow-grpc \
-    --allow=tcp:50051 \
-    --target-tags=grpc-server \
-    --project=${PROJECT_ID}
+# echo "Creating a firewall rule to allow gRPC traffic..."
+# gcloud compute firewall-rules create allow-grpc \
+#     --allow=tcp:50051 \
+#     --target-tags=grpc-server \
+#     --project=${PROJECT_ID}
 
 
 echo "Instance created. You can access it at http://${STATIC_IP}:50051"

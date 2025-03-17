@@ -140,9 +140,9 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 	taskID := rand.Intn(10000)
 	jobID := fmt.Sprintf("Job%d", taskID)
 
-	M := 512
-	N := 512
-	D := 512
+	M := 256
+	N := 256
+	D := 256
 
 	var RowSplit int32 = 4
 	var ColSplit int32 = 4

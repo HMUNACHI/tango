@@ -96,6 +96,10 @@ gRPC calls are secured with TLS, each communication to Tango muss use the provid
 3. Build and run `./deploy.sh`, which deploys to a static IP
 4. Run production test with `./test.sh --production`
 
+###
+1. Generating python proto: `protoc --python_out=. protobuff.proto`
+2. Also run: `python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. protobuff.proto` 
+
 ## Contributing
 
 - Fork and clone repository from GitHub, then CD into the directory.

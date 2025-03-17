@@ -9,7 +9,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=cactus-gcp-credentials.json
 DEFAULT_PROJECT_ID="cactus-v1-452518"
 DEFAULT_INSTANCE_NAME="device-simulator"
 DEFAULT_ZONE="us-central1-c"
-DEFAULT_MACHINE_TYPE="n1-standard-1"
+DEFAULT_MACHINE_TYPE="c2d-standard-2"
 
 PROJECT_ID=${1:-$DEFAULT_PROJECT_ID}
 INSTANCE_NAME=${2:-$DEFAULT_INSTANCE_NAME}
@@ -53,6 +53,8 @@ gcloud compute instances create-with-container ${INSTANCE_NAME} \
 
 echo "Device simulator instance created."
 echo "To SSH into the instance, run: gcloud compute ssh ${INSTANCE_NAME} --zone=${ZONE} --project=${PROJECT_ID}"
+
+sleep 10
 
 echo testing...
 go run test/job_client.go --tango-address 34.46.21.254:50051

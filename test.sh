@@ -14,7 +14,7 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 DEFAULT_PROJECT_ID="cactus-v1-452518"
 PROJECT_ID="$DEFAULT_PROJECT_ID"
 PRODUCTION_FLAG=0
-SLEEP_DURATION=5
+SLEEP_DURATION=10
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
