@@ -4,55 +4,41 @@ import logging
 import random
 import time
 import grpc
+import numpy as np
 
-# Import generated protobuf modules
 import protobuff_pb2 as pb
 import protobuff_pb2_grpc as pb_grpc
 
-# ...existing code...
-
-def matrix_to_string(mat):
-    return "\n".join(" ".join(f"{v:.2f}" for v in row) for row in mat)
-
 def multiply_full(A, B, scale):
-    m, d = len(A), len(B)
-    n = len(B[0])
-    C = [[0.0 for _ in range(n)] for _ in range(m)]
-    for i in range(m):
-        for j in range(n):
-            s = sum(A[i][k] * B[k][j] for k in range(d))
-            C[i][j] = s * scale
-    return C
+    return np.dot(A, B) * scale
 
 def generate_matrix(rows, cols, factor):
-    return [[factor * random.uniform(0, 1) for _ in range(cols)] for _ in range(rows)]
+    return np.random.uniform(0, 1, size=(rows, cols)).astype(np.float32) * factor
 
 def parse_matrix(s):
-    result = []
+    rows = []
     for line in s.strip().splitlines():
         if line:
-            result.append([float(val) for val in line.split()])
-    return result
+            rows.append([np.float32(val) for val in line.split()])
+    return np.array(rows, dtype=np.float32)
 
 def init_client(tango_address):
-    # Create a simple insecure channel
     channel = grpc.insecure_channel(tango_address)
     client = pb_grpc.TangoServiceStub(channel)
-    # Assume a test token is provided by a similar tango function;
-    # here we use a dummy token.
-    token = "dummy"
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NDA5NDcyMzgsImlzc3VlciI6IkNhY3R1cyBFZGdlIn0.bfq0u8921So9E9ra8Qdh6nGph0XaRCyMHZaDEDn3cu8"
     metadata = [('cactus-token', token)]
     return client, metadata, channel
 
 def submit_job(client, metadata):
     jobID = f"Job{random.randint(0, 10000)}"
-    M = N = D = 256
+    M = N = D = 12
     row_splits, col_splits = 4, 4
 
     aMatrix = generate_matrix(M, D, 0.1)
     bMatrix = generate_matrix(D, N, 0.1)
-    aBytes = json.dumps(aMatrix).encode('utf-8')
-    bBytes = json.dumps(bMatrix).encode('utf-8')
+    
+    aBytes = json.dumps(aMatrix.tolist()).encode('utf-8')
+    bBytes = json.dumps(bMatrix.tolist()).encode('utf-8')
 
     jobReq = pb.TaskRequest(
         consumer_id="234s5c2",
@@ -79,26 +65,11 @@ def poll_job_status(client, metadata, jobID, aMatrix, bMatrix):
         status = client.GetJobStatus(statusReq, metadata=metadata, timeout=10)
         if status.is_complete:
             expectedMatrix = multiply_full(aMatrix, bMatrix, 1.0)
-            # Assuming final_result bytes is a string representation of the matrix.
             finalMatrix = parse_matrix(status.final_result.decode('utf-8'))
-            if len(expectedMatrix) != len(finalMatrix):
-                logging.error("Verification failed: row count mismatch")
+            if np.allclose(expectedMatrix, finalMatrix, atol=1e-5):
+                logging.info("Verification passed: matrices are all close.")
             else:
-                tol = 0.005
-                passed = True
-                for i, exp_row in enumerate(expectedMatrix):
-                    if len(exp_row) != len(finalMatrix[i]):
-                        logging.error(f"Row {i} column mismatch")
-                        passed = False
-                        break
-                    for j, exp_val in enumerate(exp_row):
-                        if abs(exp_val - finalMatrix[i][j]) > tol:
-                            logging.error(f"Mismatch at [{i}][{j}]: expected {exp_val:.2f}, got {finalMatrix[i][j]:.2f}")
-                            passed = False
-                if passed:
-                    logging.info("Verification passed: final result matches expected matrix")
-                else:
-                    logging.error("Verification failed: matrices differ")
+                logging.error("Verification failed: matrices differ.")
             return
         time.sleep(0.1)
         timeout -= 0.1

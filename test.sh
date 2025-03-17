@@ -83,7 +83,8 @@ if [ $PRODUCTION_FLAG -eq 0 ]; then
 fi
 
 echo "Starting job submission client..."
-go run test/job_client.go --tango-address ${TANGO_ADDRESS} &
+# go run test/job_client.go --tango-address ${TANGO_ADDRESS} &
+python3 job_client.py --tango-address ${TANGO_ADDRESS} &
 JOB_PID=$!
 
 echo "Server PID: $SERVER_PID"

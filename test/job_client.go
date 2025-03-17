@@ -35,7 +35,7 @@ func matrixToString(mat [][]float32) string {
 	s := ""
 	for _, row := range mat {
 		for _, v := range row {
-			s += fmt.Sprintf("%.2f ", v)
+			s += fmt.Sprintf("%.8f ", v)
 		}
 		s += "\n"
 	}
@@ -224,7 +224,7 @@ func pollJobStatus(client pb.TangoServiceClient, ctx context.Context, jobID stri
 								diff = -diff
 							}
 							if diff > tolerance {
-								log.Printf("Mismatch at [%d][%d]: expected %.2f, got %.2f", i, j, expVal, finalMatrix[i][j])
+								log.Printf("Mismatch at [%d][%d]: expected %.8f, got %.8f", i, j, expVal, finalMatrix[i][j])
 								pass = false
 							}
 						}

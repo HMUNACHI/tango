@@ -51,7 +51,7 @@ func matrixToString(mat [][]float32) string {
 	s := ""
 	for _, row := range mat {
 		for _, v := range row {
-			s += fmt.Sprintf("%.2f ", v)
+			s += fmt.Sprintf("%.8f ", v)
 		}
 		s += "\n"
 	}
@@ -68,7 +68,6 @@ func initDeviceClient(deviceID string) (pb.TangoServiceClient, *grpc.ClientConn)
 	}
 	conn, err := grpc.Dial(addr,
 		grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
 	)
 	if err != nil {
 		log.Printf("Device %s: failed to connect: %v", deviceID, err)
