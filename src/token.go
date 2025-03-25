@@ -77,6 +77,10 @@ func ValidateJWT(token, secretKey string) (map[string]interface{}, error) {
 		}
 	}
 
+	if consumerID, ok := payload["consumerId"].(string); ok {
+		payload["consumerID"] = consumerID
+	}
+
 	return payload, nil
 }
 
@@ -102,9 +106,16 @@ func TokenInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 		return nil, errors.New("missing CACTUS_TOKEN")
 	}
 	JWTSecret, _ := getTangoJWTSecret()
-	_, err := ValidateJWT(tokens[0], JWTSecret)
+	payload, err := ValidateJWT(tokens[0], JWTSecret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT: %v", err)
 	}
+
+	// Extract consumerID from the payload
+	if consumerID, ok := payload["consumerID"].(string); ok {
+		// Create a new context with the consumerID
+		ctx = context.WithValue(ctx, "consumerID", consumerID)
+	}
+
 	return handler(ctx, req)
 }

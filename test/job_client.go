@@ -115,7 +115,7 @@ func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *
 	}
 	conn, err := grpc.Dial(tangoAddress,
 		grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor("zstd")),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)
@@ -167,7 +167,6 @@ func submitJob(client pb.TangoServiceClient, ctx context.Context) (string, [][]f
 	}
 
 	jobReq := &pb.TaskRequest{
-		ConsumerId:  "234s5c2",
 		JobId:       jobID,
 		Operation:   "scaled_matmul",
 		AData:       aBytes,

@@ -4,6 +4,7 @@ import logging
 import random
 import time
 import grpc
+import gzip
 import numpy as np
 
 import protobuff_pb2 as pb
@@ -23,15 +24,20 @@ def parse_matrix(s):
     return np.array(rows, dtype=np.float32)
 
 def init_client(tango_address):
-    channel = grpc.insecure_channel(tango_address)
+    channel = grpc.insecure_channel(
+        tango_address,
+        options=[('grpc.default_compression_algorithm', grpc.Compression.Gzip)]
+    )
     client = pb_grpc.TangoServiceStub(channel)
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NDA5NDcyMzgsImlzc3VlciI6IkNhY3R1cyBFZGdlIn0.bfq0u8921So9E9ra8Qdh6nGph0XaRCyMHZaDEDn3cu8"
+    token = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+             "eyJpYXQiOjE3NDA5NDcyMzgsImlzc3VlciI6IkNhY3R1cyBFZGdlIn0."
+             "bfq0u8921So9E9ra8Qdh6nGph0XaRCyMHZaDEDn3cu8")
     metadata = [('cactus-token', token)]
     return client, metadata, channel
 
 def submit_job(client, metadata):
     jobID = f"Job{random.randint(0, 10000)}"
-    M = N = D = 12
+    M = N = D = 512
     row_splits, col_splits = 4, 4
 
     aMatrix = generate_matrix(M, D, 0.1)
@@ -39,6 +45,17 @@ def submit_job(client, metadata):
     
     aBytes = json.dumps(aMatrix.tolist()).encode('utf-8')
     bBytes = json.dumps(bMatrix.tolist()).encode('utf-8')
+    
+    a_compressed = gzip.compress(aBytes)
+    b_compressed = gzip.compress(bBytes)
+    
+    a_ratio = (len(a_compressed) / len(aBytes)) * 100.0
+    b_ratio = (len(b_compressed) / len(bBytes)) * 100.0
+
+    logging.info("A matrix: original size %d bytes, gzip compressed size %d bytes (%.2f%% of original)",
+                 len(aBytes), len(a_compressed), a_ratio)
+    logging.info("B matrix: original size %d bytes, gzip compressed size %d bytes (%.2f%% of original)",
+                 len(bBytes), len(b_compressed), b_ratio)
 
     jobReq = pb.TaskRequest(
         consumer_id="234s5c2",
@@ -53,7 +70,7 @@ def submit_job(client, metadata):
         n=N,
         d=D
     )
-    response = client.SubmitTask(jobReq, metadata=metadata, timeout=10)
+    response = client.SubmitTask(jobReq, metadata=metadata, timeout=10, compression=grpc.Compression.Gzip)
     if not response.accepted:
         raise Exception(f"Job {jobID} rejected: {response.message}")
     return jobID, aMatrix, bMatrix
@@ -62,7 +79,7 @@ def poll_job_status(client, metadata, jobID, aMatrix, bMatrix):
     timeout = 100.0
     while timeout > 0:
         statusReq = pb.JobStatusRequest(job_id=jobID)
-        status = client.GetJobStatus(statusReq, metadata=metadata, timeout=10)
+        status = client.GetJobStatus(statusReq, metadata=metadata, timeout=10, compression=grpc.Compression.Gzip)
         if status.is_complete:
             expectedMatrix = multiply_full(aMatrix, bMatrix, 1.0)
             finalMatrix = parse_matrix(status.final_result.decode('utf-8'))

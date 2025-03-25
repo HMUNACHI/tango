@@ -94,9 +94,6 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr TaskRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        consumer_id_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
         job_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
@@ -313,7 +310,6 @@ const ::uint32_t
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::protobuff::TaskRequest, _impl_.consumer_id_),
         PROTOBUF_FIELD_OFFSET(::protobuff::TaskRequest, _impl_.job_id_),
         PROTOBUF_FIELD_OFFSET(::protobuff::TaskRequest, _impl_.operation_),
         PROTOBUF_FIELD_OFFSET(::protobuff::TaskRequest, _impl_.a_data_),
@@ -325,7 +321,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::protobuff::TaskRequest, _impl_.m_),
         PROTOBUF_FIELD_OFFSET(::protobuff::TaskRequest, _impl_.n_),
         PROTOBUF_FIELD_OFFSET(::protobuff::TaskRequest, _impl_.d_),
-        ~0u,
         ~0u,
         ~0u,
         ~0u,
@@ -431,14 +426,14 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, 20, -1, sizeof(::protobuff::TaskRequest)},
-        {32, -1, -1, sizeof(::protobuff::TaskResponse)},
-        {42, -1, -1, sizeof(::protobuff::DeviceRequest)},
-        {51, 69, -1, sizeof(::protobuff::TaskAssignment)},
-        {79, -1, -1, sizeof(::protobuff::TaskResult)},
-        {92, -1, -1, sizeof(::protobuff::ResultResponse)},
-        {102, -1, -1, sizeof(::protobuff::JobStatusRequest)},
-        {111, -1, -1, sizeof(::protobuff::JobStatusReply)},
+        {0, 19, -1, sizeof(::protobuff::TaskRequest)},
+        {30, -1, -1, sizeof(::protobuff::TaskResponse)},
+        {40, -1, -1, sizeof(::protobuff::DeviceRequest)},
+        {49, 67, -1, sizeof(::protobuff::TaskAssignment)},
+        {77, -1, -1, sizeof(::protobuff::TaskResult)},
+        {90, -1, -1, sizeof(::protobuff::ResultResponse)},
+        {100, -1, -1, sizeof(::protobuff::JobStatusRequest)},
+        {109, -1, -1, sizeof(::protobuff::JobStatusReply)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::protobuff::_TaskRequest_default_instance_._instance,
@@ -452,42 +447,42 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_protobuff_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\017protobuff.proto\022\tprotobuff\"\204\002\n\013TaskReq"
-    "uest\022\023\n\013consumer_id\030\001 \001(\t\022\016\n\006job_id\030\002 \001("
-    "\t\022\021\n\toperation\030\003 \001(\t\022\016\n\006a_data\030\004 \001(\014\022\016\n\006"
-    "b_data\030\005 \001(\014\022\030\n\013scale_bytes\030\006 \001(\014H\000\210\001\001\022\031"
-    "\n\014scale_scalar\030\007 \001(\002H\001\210\001\001\022\022\n\nrow_splits\030"
-    "\010 \001(\005\022\022\n\ncol_splits\030\t \001(\005\022\t\n\001m\030\n \001(\005\022\t\n\001"
-    "n\030\013 \001(\005\022\t\n\001d\030\014 \001(\005B\016\n\014_scale_bytesB\017\n\r_s"
-    "cale_scalar\"1\n\014TaskResponse\022\020\n\010accepted\030"
-    "\001 \001(\010\022\017\n\007message\030\002 \001(\t\"\"\n\rDeviceRequest\022"
-    "\021\n\tdevice_id\030\001 \001(\t\"\333\001\n\016TaskAssignment\022\016\n"
-    "\006job_id\030\001 \001(\t\022\017\n\007task_id\030\002 \001(\t\022\021\n\toperat"
-    "ion\030\003 \001(\t\022\016\n\006a_data\030\004 \001(\014\022\016\n\006b_data\030\005 \001("
-    "\014\022\030\n\013scale_bytes\030\006 \001(\014H\000\210\001\001\022\031\n\014scale_sca"
-    "lar\030\007 \001(\002H\001\210\001\001\022\t\n\001m\030\010 \001(\005\022\t\n\001n\030\t \001(\005\022\t\n\001"
-    "d\030\n \001(\005B\016\n\014_scale_bytesB\017\n\r_scale_scalar"
-    "\"d\n\nTaskResult\022\021\n\tdevice_id\030\001 \001(\t\022\016\n\006job"
-    "_id\030\002 \001(\t\022\017\n\007task_id\030\003 \001(\t\022\023\n\013result_dat"
-    "a\030\004 \001(\014\022\r\n\005flops\030\005 \001(\005\"2\n\016ResultResponse"
-    "\022\017\n\007success\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\"\"\n\020Jo"
-    "bStatusRequest\022\016\n\006job_id\030\001 \001(\t\"L\n\016JobSta"
-    "tusReply\022\023\n\013is_complete\030\001 \001(\010\022\017\n\007message"
-    "\030\002 \001(\t\022\024\n\014final_result\030\003 \001(\0142\241\002\n\014TangoSe"
-    "rvice\022\?\n\nSubmitTask\022\026.protobuff.TaskRequ"
-    "est\032\027.protobuff.TaskResponse\"\000\022B\n\tFetchT"
-    "ask\022\030.protobuff.DeviceRequest\032\031.protobuf"
-    "f.TaskAssignment\"\000\022B\n\014ReportResult\022\025.pro"
-    "tobuff.TaskResult\032\031.protobuff.ResultResp"
-    "onse\"\000\022H\n\014GetJobStatus\022\033.protobuff.JobSt"
-    "atusRequest\032\031.protobuff.JobStatusReply\"\000"
-    "B\035Z\033cactus/tango/src; protobuffb\006proto3"
+    "\n\017protobuff.proto\022\tprotobuff\"\357\001\n\013TaskReq"
+    "uest\022\016\n\006job_id\030\002 \001(\t\022\021\n\toperation\030\003 \001(\t\022"
+    "\016\n\006a_data\030\004 \001(\014\022\016\n\006b_data\030\005 \001(\014\022\030\n\013scale"
+    "_bytes\030\006 \001(\014H\000\210\001\001\022\031\n\014scale_scalar\030\007 \001(\002H"
+    "\001\210\001\001\022\022\n\nrow_splits\030\010 \001(\005\022\022\n\ncol_splits\030\t"
+    " \001(\005\022\t\n\001m\030\n \001(\005\022\t\n\001n\030\013 \001(\005\022\t\n\001d\030\014 \001(\005B\016\n"
+    "\014_scale_bytesB\017\n\r_scale_scalar\"1\n\014TaskRe"
+    "sponse\022\020\n\010accepted\030\001 \001(\010\022\017\n\007message\030\002 \001("
+    "\t\"\"\n\rDeviceRequest\022\021\n\tdevice_id\030\001 \001(\t\"\333\001"
+    "\n\016TaskAssignment\022\016\n\006job_id\030\001 \001(\t\022\017\n\007task"
+    "_id\030\002 \001(\t\022\021\n\toperation\030\003 \001(\t\022\016\n\006a_data\030\004"
+    " \001(\014\022\016\n\006b_data\030\005 \001(\014\022\030\n\013scale_bytes\030\006 \001("
+    "\014H\000\210\001\001\022\031\n\014scale_scalar\030\007 \001(\002H\001\210\001\001\022\t\n\001m\030\010"
+    " \001(\005\022\t\n\001n\030\t \001(\005\022\t\n\001d\030\n \001(\005B\016\n\014_scale_byt"
+    "esB\017\n\r_scale_scalar\"d\n\nTaskResult\022\021\n\tdev"
+    "ice_id\030\001 \001(\t\022\016\n\006job_id\030\002 \001(\t\022\017\n\007task_id\030"
+    "\003 \001(\t\022\023\n\013result_data\030\004 \001(\014\022\r\n\005flops\030\005 \001("
+    "\005\"2\n\016ResultResponse\022\017\n\007success\030\001 \001(\010\022\017\n\007"
+    "message\030\002 \001(\t\"\"\n\020JobStatusRequest\022\016\n\006job"
+    "_id\030\001 \001(\t\"L\n\016JobStatusReply\022\023\n\013is_comple"
+    "te\030\001 \001(\010\022\017\n\007message\030\002 \001(\t\022\024\n\014final_resul"
+    "t\030\003 \001(\0142\241\002\n\014TangoService\022\?\n\nSubmitTask\022\026"
+    ".protobuff.TaskRequest\032\027.protobuff.TaskR"
+    "esponse\"\000\022B\n\tFetchTask\022\030.protobuff.Devic"
+    "eRequest\032\031.protobuff.TaskAssignment\"\000\022B\n"
+    "\014ReportResult\022\025.protobuff.TaskResult\032\031.p"
+    "rotobuff.ResultResponse\"\000\022H\n\014GetJobStatu"
+    "s\022\033.protobuff.JobStatusRequest\032\031.protobu"
+    "ff.JobStatusReply\"\000B\035Z\033cactus/tango/src;"
+    " protobuffb\006proto3"
 };
 static ::absl::once_flag descriptor_table_protobuff_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_protobuff_2eproto = {
     false,
     false,
-    1199,
+    1178,
     descriptor_table_protodef_protobuff_2eproto,
     "protobuff.proto",
     &descriptor_table_protobuff_2eproto_once,
@@ -525,7 +520,6 @@ inline PROTOBUF_NDEBUG_INLINE TaskRequest::Impl_::Impl_(
     const Impl_& from, const ::protobuff::TaskRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        consumer_id_(arena, from.consumer_id_),
         job_id_(arena, from.job_id_),
         operation_(arena, from.operation_),
         a_data_(arena, from.a_data_),
@@ -559,7 +553,6 @@ inline PROTOBUF_NDEBUG_INLINE TaskRequest::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0},
-        consumer_id_(arena),
         job_id_(arena),
         operation_(arena),
         a_data_(arena),
@@ -583,7 +576,6 @@ inline void TaskRequest::SharedDtor(MessageLite& self) {
   TaskRequest& this_ = static_cast<TaskRequest&>(self);
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.consumer_id_.Destroy();
   this_._impl_.job_id_.Destroy();
   this_._impl_.operation_.Destroy();
   this_._impl_.a_data_.Destroy();
@@ -628,15 +620,15 @@ const ::google::protobuf::internal::ClassData* TaskRequest::GetClassData() const
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 12, 0, 64, 2> TaskRequest::_table_ = {
+const ::_pbi::TcParseTable<4, 11, 0, 53, 2> TaskRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_._has_bits_),
     0, // no _extensions_
     12, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294963200,  // skipmap
+    4294963201,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    12,  // num_field_entries
+    11,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -647,9 +639,7 @@ const ::_pbi::TcParseTable<4, 12, 0, 64, 2> TaskRequest::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // string consumer_id = 1;
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.consumer_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // string job_id = 2;
     {::_pbi::TcParser::FastUS1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.job_id_)}},
@@ -689,9 +679,6 @@ const ::_pbi::TcParseTable<4, 12, 0, 64, 2> TaskRequest::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // string consumer_id = 1;
-    {PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.consumer_id_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string job_id = 2;
     {PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.job_id_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
@@ -728,9 +715,8 @@ const ::_pbi::TcParseTable<4, 12, 0, 64, 2> TaskRequest::_table_ = {
   }},
   // no aux_entries
   {{
-    "\25\13\6\11\0\0\0\0\0\0\0\0\0\0\0\0"
+    "\25\6\11\0\0\0\0\0\0\0\0\0\0\0\0\0"
     "protobuff.TaskRequest"
-    "consumer_id"
     "job_id"
     "operation"
   }},
@@ -743,7 +729,6 @@ PROTOBUF_NOINLINE void TaskRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.consumer_id_.ClearToEmpty();
   _impl_.job_id_.ClearToEmpty();
   _impl_.operation_.ClearToEmpty();
   _impl_.a_data_.ClearToEmpty();
@@ -774,14 +759,6 @@ PROTOBUF_NOINLINE void TaskRequest::Clear() {
           // @@protoc_insertion_point(serialize_to_array_start:protobuff.TaskRequest)
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
-
-          // string consumer_id = 1;
-          if (!this_._internal_consumer_id().empty()) {
-            const std::string& _s = this_._internal_consumer_id();
-            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "protobuff.TaskRequest.consumer_id");
-            target = stream->WriteStringMaybeAliased(1, _s, target);
-          }
 
           // string job_id = 2;
           if (!this_._internal_job_id().empty()) {
@@ -885,11 +862,6 @@ PROTOBUF_NOINLINE void TaskRequest::Clear() {
 
           ::_pbi::Prefetch5LinesFrom7Lines(&this_);
            {
-            // string consumer_id = 1;
-            if (!this_._internal_consumer_id().empty()) {
-              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                              this_._internal_consumer_id());
-            }
             // string job_id = 2;
             if (!this_._internal_job_id().empty()) {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
@@ -962,9 +934,6 @@ void TaskRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (!from._internal_consumer_id().empty()) {
-    _this->_internal_set_consumer_id(from._internal_consumer_id());
-  }
   if (!from._internal_job_id().empty()) {
     _this->_internal_set_job_id(from._internal_job_id());
   }
@@ -1019,7 +988,6 @@ void TaskRequest::InternalSwap(TaskRequest* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.consumer_id_, &other->_impl_.consumer_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.job_id_, &other->_impl_.job_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.operation_, &other->_impl_.operation_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.a_data_, &other->_impl_.a_data_, arena);

@@ -12,7 +12,6 @@ service TangoService {
 }
 
 message TaskRequest {
-  string consumer_id = 1;
   string job_id = 2;
   string operation = 3;   
   bytes a_data = 4;   

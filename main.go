@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	MESSAGE_LIMIT := 21 * 1024 * 1024
+	MESSAGE_LIMIT := 100 * 512 * 512
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "50051"

@@ -14,7 +14,6 @@ import (
 // It holds all relevant information for processing a matrix multiplication task,
 // including input data, expected processing splits, results, and synchronization primitives.
 type Job struct {
-	ConsumerID      string               // Identifier for the consumer that submitted the job.
 	JobID           string               // Unique identifier for the job.
 	Operation       string               // The operation to be performed (e.g., "scaled_matmul").
 	AData           []byte               // Serialized data for matrix A.

@@ -47,8 +47,10 @@ func (s *server) ReportResult(ctx context.Context, res *pb.TaskResult) (*pb.Resu
 	job.Results[shardIndex] = []byte(res.ResultData)
 	job.ReceivedUpdates++
 
+	consumerID := ctx.Value("consumerID").(string)
+
 	if res.Flops > 0 && len(res.ResultData) > 0 {
-		if err := AppendRecord(res.DeviceId, job.ConsumerID, res.Flops); err != nil {
+		if err := AppendRecord(res.DeviceId, consumerID, res.Flops); err != nil {
 			log.Printf("Failed to append record for job %s: %v", job.JobID, err)
 		}
 	}

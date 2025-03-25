@@ -18,7 +18,6 @@ import (
 // expected splits, scale factor, and pending tasks map.
 func createJob(req *pb.TaskRequest) *Job {
 	return &Job{
-		ConsumerID:      req.ConsumerId,
 		JobID:           req.JobId,
 		Operation:       req.Operation,
 		AData:           req.AData,
