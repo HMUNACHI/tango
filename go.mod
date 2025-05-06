@@ -1,4 +1,4 @@
-module cactus/tango
+module tango/tango
 
 go 1.23.0
 

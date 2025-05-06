@@ -1,5 +1,5 @@
 /*
-Tango is a product of Cactus Compute, Inc.
+Tango is a product of tango Compute, Inc.
 This code is proprietary. Do not share the code.
 */
 package main
@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	tango "cactus/tango/src"
-	pb "cactus/tango/src/protobuff"
+	tango "tango/tango/src"
+	pb "tango/tango/src/protobuff"
 )
 
 func main() {

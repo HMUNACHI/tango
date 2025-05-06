@@ -1,7 +1,3 @@
-/*
-Tango is a product of Cactus Compute, Inc.
-This code is proprietary. Do not share the code.
-*/
 package main
 
 import (
@@ -13,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	tango "cactus/tango/src"
-	pb "cactus/tango/src/protobuff"
+	tango "tango/tango/src"
+	pb "tango/tango/src/protobuff"
 
 	"net"
 
@@ -127,7 +123,7 @@ func initClient() (pb.TangoServiceClient, context.Context, context.CancelFunc, *
 	if err != nil {
 		log.Fatalf("failed to get test token: %v", err)
 	}
-	md := metadata.New(map[string]string{"cactus-token": token})
+	md := metadata.New(map[string]string{"tango-token": token})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	return client, ctx, cancel, conn
 }

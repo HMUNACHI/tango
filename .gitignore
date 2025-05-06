@@ -28,7 +28,7 @@ go.work.sum
 __pycache__/
 *.pyc
 
-# Cactus GCP credentials
-cactus-gcp-credentials.json
+#  GCP credentials
+gcp-credentials.json
 server.crt
 server.key

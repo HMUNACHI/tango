@@ -2,11 +2,11 @@
 # filepath: /Users/henry/Desktop/tango/deploy.sh
 # This script builds a Docker image (targeting linux/amd64),
 # pushes it to Google Container Registry, and creates a Compute Engine instance.
-# Defaults: PROJECT_ID: cactus-v1-452518, INSTANCE_NAME: tango-instance, ZONE: us-central1-a
+# Defaults: PROJECT_ID: tango-v1, INSTANCE_NAME: tango-instance, ZONE: us-central1-a
 
 set -e
 
-DEFAULT_PROJECT_ID="cactus-v1-452518"
+DEFAULT_PROJECT_ID="tango-v1"
 DEFAULT_INSTANCE_NAME="tango-v1"
 DEFAULT_ZONE="us-central1-c"
 DEFAULT_MACHINE_TYPE="c2d-standard-2"
@@ -54,7 +54,7 @@ gcloud compute instances create-with-container ${INSTANCE_NAME} \
     --container-image=${FULL_IMAGE_NAME} \
     --zone=${ZONE} \
     --address=${STATIC_IP} \
-    --service-account=tango-service-acount@cactus-v1-452518.iam.gserviceaccount.com \
+    --service-account=tango-service-acount@tango-v1-452518.iam.gserviceaccount.com \
     --scopes=https://www.googleapis.com/auth/cloud-platform \
     --tags=http-server,https-server,grpc-server \
     --create-disk=auto-delete=yes,device-name=tango,image=projects/debian-cloud/global/images/debian-12-bookworm-v20250212,mode=rw,size=10,type=pd-balanced

@@ -1,7 +1,3 @@
-/*
-Tango is a product of Cactus Compute, Inc.
-This code is proprietary. Do not share the code.
-*/
 package main
 
 import (
@@ -15,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	tango "cactus/tango/src"
-	pb "cactus/tango/src/protobuff"
+	tango "tango/tango/src"
+	pb "tango/tango/src/protobuff"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -84,7 +80,7 @@ func createAuthCtx(deviceID string) (context.Context, context.CancelFunc) {
 		log.Printf("Device %s: failed to get test token: %v", deviceID, err)
 		return ctx, cancel
 	}
-	md := metadata.New(map[string]string{"cactus-token": token})
+	md := metadata.New(map[string]string{"tango-token": token})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	return ctx, cancel
 }

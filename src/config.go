@@ -1,7 +1,3 @@
-/*
-Tango is a product of Cactus Compute, Inc.
-This code is proprietary. Do not share the code.
-*/
 package tango
 
 import (

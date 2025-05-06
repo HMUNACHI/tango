@@ -1,13 +1,9 @@
-/*
-Tango is a product of Cactus Compute, Inc.
-This code is proprietary. Do not share the code.
-*/
 package tango
 
 import (
-	pb "cactus/tango/src/protobuff"
 	"context"
 	"sync"
+	pb "tango/tango/src/protobuff"
 )
 
 // Job represents a computation job in the Tango system.

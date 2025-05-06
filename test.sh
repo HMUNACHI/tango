@@ -4,14 +4,14 @@
 # runs the server and clients, and stops all processes after a fixed duration.
 # New flags:
 #   --production      If present, the test will use the deployed IP.
-#   --project <ID>    Set the project ID. Defaults to "cactus-v1-452518" if not provided.
+#   --project <ID>    Set the project ID. Defaults to "tango-v1-452518" if not provided.
 
 set -e
 
-export GOOGLE_APPLICATION_CREDENTIALS=cactus-gcp-credentials.json
+export GOOGLE_APPLICATION_CREDENTIALS=gcp-credentials.json
 export PATH="$PATH:$(go env GOPATH)/bin"
 
-DEFAULT_PROJECT_ID="cactus-v1-452518"
+DEFAULT_PROJECT_ID="tango-v1-452518"
 PROJECT_ID="$DEFAULT_PROJECT_ID"
 PRODUCTION_FLAG=0
 SLEEP_DURATION=10
@@ -83,8 +83,7 @@ if [ $PRODUCTION_FLAG -eq 0 ]; then
 fi
 
 echo "Starting job submission client..."
-# go run test/job_client.go --tango-address ${TANGO_ADDRESS} &
-python3 job_client.py --tango-address ${TANGO_ADDRESS} &
+go run test/job_client.go --tango-address ${TANGO_ADDRESS} &
 JOB_PID=$!
 
 echo "Server PID: $SERVER_PID"

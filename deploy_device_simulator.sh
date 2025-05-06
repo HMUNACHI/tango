@@ -4,9 +4,9 @@
 
 set -e
 
-export GOOGLE_APPLICATION_CREDENTIALS=cactus-gcp-credentials.json
+export GOOGLE_APPLICATION_CREDENTIALS=gcp-credentials.json
 
-DEFAULT_PROJECT_ID="cactus-v1-452518"
+DEFAULT_PROJECT_ID="tango-v1"
 DEFAULT_INSTANCE_NAME="device-simulator"
 DEFAULT_ZONE="us-central1-c"
 DEFAULT_MACHINE_TYPE="c2d-standard-2"

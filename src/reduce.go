@@ -1,16 +1,12 @@
-/*
-Tango is a product of Cactus Compute, Inc.
-This code is proprietary. Do not share the code.
-*/
 package tango
 
 import (
-	pb "cactus/tango/src/protobuff"
 	"context"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
+	pb "tango/tango/src/protobuff"
 )
 
 // ReportResult processes the result of a task reported by a device.

@@ -1,7 +1,3 @@
-/*
-Tango is a product of Cactus Compute, Inc.
-This code is proprietary. Do not share the code.
-*/
 package tango
 
 import (
@@ -93,7 +89,7 @@ func generateHmacSha256Signature(data, secretKey string) []byte {
 }
 
 // TokenInterceptor is a gRPC unary interceptor that validates the JWT provided in the request metadata.
-// It retrieves the "cactus-token" from the incoming metadata, fetches the expected JWT secret,
+// It retrieves the "tango-token" from the incoming metadata, fetches the expected JWT secret,
 // validates the token using ValidateJWT, and only allows the request to proceed if the token is valid.
 // Returns an error if the token is missing or invalid.
 func TokenInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -101,9 +97,9 @@ func TokenInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 	if !ok {
 		return nil, errors.New("missing metadata")
 	}
-	tokens := md["cactus-token"]
+	tokens := md["tango-token"]
 	if len(tokens) == 0 {
-		return nil, errors.New("missing CACTUS_TOKEN")
+		return nil, errors.New("missing tango_TOKEN")
 	}
 	JWTSecret, _ := getTangoJWTSecret()
 	payload, err := ValidateJWT(tokens[0], JWTSecret)

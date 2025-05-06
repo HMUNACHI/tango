@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "cactus/tango/src; protobuff";
+option go_package = "tango/tango/src; protobuff";
 
 package protobuff;
 
